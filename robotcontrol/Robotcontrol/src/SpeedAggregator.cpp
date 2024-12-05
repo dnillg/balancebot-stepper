@@ -3,7 +3,8 @@
 SpeedAggregator::SpeedAggregator(uint8_t samplesCount, uint8_t batchSize) {
     this->samplesCount = samplesCount;
     this->batchSize = batchSize;
-    this->samples = new uint16_t[samplesCount];
+    this->samples = new int16_t[samplesCount];
+    this->batchCounter = 0;
     for (uint8_t i = 0; i < samplesCount; i++) {
         samples[i] = 0;
     }
@@ -13,7 +14,7 @@ SpeedAggregator::~SpeedAggregator() {
     delete[] samples;
 }
 
-void SpeedAggregator::consume(uint16_t sample) {
+void SpeedAggregator::consume(int16_t sample) {
     if (batchSize == 1) {
         addSample(sample);
     } else {
@@ -21,14 +22,14 @@ void SpeedAggregator::consume(uint16_t sample) {
         batchCounter++;
         if (batchCounter == batchSize) {
             batchCounter = 0;
-            int32_t sample = batchSum / batchSize;
+            int32_t batchSample = batchSum / batchSize;
             batchSum = 0;
-            addSample(sample);
+            addSample(batchSample);
         }
     }
 }
 
-void SpeedAggregator::addSample(uint16_t sample) {
+void SpeedAggregator::addSample(int16_t sample) {
     samplesSum -= samples[head];
     samples[head] = sample;
     samplesSum += samples[head];
@@ -38,7 +39,7 @@ void SpeedAggregator::addSample(uint16_t sample) {
     }
 }
 
-uint16_t SpeedAggregator::getSpeed() {
+int16_t SpeedAggregator::getSpeed() {
     return samplesSum / samplesCount;
 }
 

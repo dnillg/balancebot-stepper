@@ -36,7 +36,6 @@ void IRAM_ATTR motorRightTimerFunction();
 // Configuration Structures
 MotorPins createMotorLeftPins();
 MotorPins createMotorRightPins();
-MotorConfig createMotorConfig();
 
 // ----------------------------------------------------------------------------
 // Global Variables
@@ -50,13 +49,12 @@ struct GlobalState
   BluetoothSerial SerialBT;
   Control control;
   IMU imu;
-  Motor leftMotor = Motor(createMotorConfig(), createMotorLeftPins(), motorLeftTimerFunction, 0);
-  Motor rightMotor = Motor(createMotorConfig(), createMotorRightPins(), motorRightTimerFunction, 1);
+  Motor leftMotor = Motor(createMotorLeftPins(), motorLeftTimerFunction, 0, FORWARD);
+  Motor rightMotor = Motor(createMotorRightPins(), motorRightTimerFunction, 1, BACKWARD);
   uint64_t counter = 0;
-  MotorOutput motorOutput;
   //RemoteControl remoteControl;
   SpeedAggregator speedAgg100 = SpeedAggregator(10, 2); // 100ms
-  SpeedAggregator speedAgg500 = SpeedAggregator(10, 2); // 500ms
+  SpeedAggregator speedAgg500 = SpeedAggregator(10, 10); // 500ms
 };
 
 GlobalState gstate;
@@ -163,69 +161,7 @@ uint64_t setSpeedAt=0;
 
 void loop()
 {
-  #if CONTROL_TASK_ENABLED == true
   return;
-  #endif
-  if (Serial.available() > 0) {
-    String command = Serial.readStringUntil('\n');
-    command.trim();
-    long speed = command.toInt();
-
-    if (abs(speed) > 8000) {
-      speed = 0;
-    }
-    if (speed == 1) {
-      Serial.println(gstate.leftMotor.getStatus(), HEX);
-      gstate.leftMotor.logStatus();
-      Serial.println(gstate.rightMotor.getStatus(), HEX);
-      gstate.rightMotor.logStatus();
-      return;
-    }
-    if (speed == 2) {
-      Serial.println(gstate.leftMotor.stepper.speed());
-      return;
-    }
-    if (speed == 3) {
-      Serial.println("Disabling motors");
-      gstate.leftMotor.disable();
-      gstate.rightMotor.disable();
-      return;
-    }
-    if (speed == 4) {
-      Serial.println("Left");
-      Serial.println(gstate.leftMotor.driver.diag0_error());
-      Serial.println(gstate.leftMotor.driver.drv_err());
-      Serial.println("Right");
-      Serial.println(gstate.rightMotor.driver.diag0_error());
-      Serial.println(gstate.rightMotor.driver.drv_err());
-      return;
-    }
-    if (speed == 5) {
-      Serial.println(gstate.leftMotor.driver.reset());
-      return;
-    }
-    if (speed == 6) {
-      Serial.println("Enabling motors");
-      gstate.leftMotor.enable();
-      gstate.rightMotor.enable();
-      return;
-    }
-    // Serial.print("Speed: ");
-    // Serial.println(speed);
-    // gstate.leftMotor.setSpeed(speed);
-    // setSpeedAt = gstate.failSafe.getCurrentMs() + 20;
-    nextSpeed = -speed;
-    if (speed >= 10) {
-      gstate.motorOutput.speedLeft = speed;
-      gstate.motorOutput.speedRight = speed;
-      Serial.print("Speed: ");
-      Serial.println(speed);
-      gstate.leftMotor.setSpeed(speed);
-      gstate.rightMotor.setSpeed(speed);
-      gstate.leftMotor.enable();
-      gstate.rightMotor.enable();
-    }
-  }
 }
 
 void failsafeTask(void *pvParameters)
@@ -263,7 +199,10 @@ void controlTask(void *pvParameters)
       gstate.control.setInputSteerProportion(0.0);  //TODO: Remote Control
 
       gstate.control.compute();
-      if (gstate.control.getCycleNo() % 50) {
+
+      int16_t step16SpeedLeft = gstate.control.getSteps16Left();
+      int16_t step16SpeedRight = gstate.control.getSteps16Right();
+      if (gstate.control.getCycleNo() % 40 == 0) {
         Serial.print("Roll: ");
         Serial.print(currentRoll);
         Serial.print(", Speed: ");
@@ -271,14 +210,14 @@ void controlTask(void *pvParameters)
         Serial.print(", Setpoint: ");
         Serial.print(gstate.control.getRollSetpoint());
         Serial.print(", Left: ");
-        Serial.print(gstate.control.getSteps16Left());
+        Serial.print(step16SpeedLeft);
         Serial.print(", Right: ");
-        Serial.println(gstate.control.getSteps16Right());
+        Serial.println(step16SpeedRight);
       }
-      gstate.leftMotor.setSpeed(gstate.control.getSteps16Left());
-      gstate.rightMotor.setSpeed(gstate.control.getSteps16Right());
+      gstate.leftMotor.setSpeed(step16SpeedLeft);
+      gstate.rightMotor.setSpeed(step16SpeedRight);
 
-      uint32_t currentSpeed = gstate.motorOutput.speed();
+      int16_t currentSpeed = (((int32_t)step16SpeedLeft) + step16SpeedRight) / 2;
       gstate.speedAgg100.consume(currentSpeed);
       gstate.speedAgg500.consume(currentSpeed);
       
@@ -295,19 +234,6 @@ void halt()
   {
     delay(1000);
   }
-}
-
-MotorConfig createMotorConfig()
-{
-  MotorConfig motorConfig;
-  motorConfig.rSense = MOTOR_R_SENSE;
-  motorConfig.toff = MOTOR_TOFF;
-  motorConfig.rmsCurrent = MOTOR_RMS_CURRENT;
-  motorConfig.pwmAutoscale = MOTOR_PWM_AUTOSCALE;
-  motorConfig.pwmMode = MOTOR_PWM_MODE;
-  motorConfig.maxSpeed = MOTOR_MAX_SPEED;
-  motorConfig.maxAcceleration = MOTOR_MAX_ACCELERATION;
-  return motorConfig;
 }
 
 MotorPins createMotorLeftPins()

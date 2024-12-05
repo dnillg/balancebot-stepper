@@ -17,7 +17,7 @@
 #define MOTOR_PWM_MODE true
 
 #define MOTOR_MAX_SPEED 8000
-#define MOTOR_MAX_ACCELERATION 20000
+#define MOTOR_MAX_ACCELERATION 10000
 
 // ----------------------------------------------------------------------------
 // IMU Config
@@ -40,8 +40,8 @@
 #define CONTROL_MAX_TILT_RAD_OFFSET 0.1745 // 10 degrees in radians
 #define CONTROL_MAX_STEER_STEP16_OFFSET 200
 
-#define CONTROL_ROLL_PID_KP 14000
-#define CONTROL_ROLL_PID_KI 1000
+#define CONTROL_ROLL_PID_KP 15000
+#define CONTROL_ROLL_PID_KI 0
 #define CONTROL_ROLL_PID_KD 600
 
 #define CONTROL_SPEED_PID_KP 0.0
@@ -49,7 +49,7 @@
 #define CONTROL_SPEED_PID_KD 0.0
 
 #define CONTROL_MAX_STEP16_SPEED 8000
-#define CONTROL_MAX_ACCERATION 20000
+#define CONTROL_MAX_ACCERATION 40000
 
 #define AVG_SPEED_SAMPLES 20
 

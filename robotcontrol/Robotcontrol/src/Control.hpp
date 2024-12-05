@@ -7,12 +7,14 @@
 #include "models/RemoteControl.hpp"
 #include "models/ControlInput.hpp"
 #include "models/MotorOutput.hpp"
+#include "StepperDampener.hpp"
 
 class Control
 {
 private:
   ControlInput input;
   MotorOutput motorOutput;
+  StepperDampener stepperDampener;
   // Speed PID
   PID speedPID;
   double targetStep16Speed;
@@ -37,6 +39,7 @@ public:
   double getRollSetpoint();
   double getRollOutput();
   double getSpeedPIDOutput();
+  MotorOutput& getMotorOutput();
   uint16_t getCycleNo();
 };
 

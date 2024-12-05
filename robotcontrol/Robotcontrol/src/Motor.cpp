@@ -1,12 +1,13 @@
 #include "Motor.hpp"
 
-Motor::Motor(MotorConfig config, MotorPins pins, void (*timerFunction)(void), uint8_t timerIdx ): 
-    driver(pins.cs, config.rSense, pins.mosi, pins.miso, pins.sck), 
+Motor::Motor(MotorPins pins, void (*timerFunction)(void), uint8_t timerIdx, Direction direction): 
+    driver(pins.cs, MOTOR_R_SENSE, pins.mosi, pins.miso, pins.sck), 
     stepper(1, pins.stp, pins.dir)
 {
     this->enablePin = pins.en;
     this->timerFunction = timerFunction;
     this->stepTimer = timerBegin(timerIdx, 80, true); // 80 cycles: 1us
+    this->direction = direction;
 }
 
 void Motor::init() {
@@ -33,9 +34,9 @@ void Motor::init() {
 
     driver.en_pwm_mode(true); // Toggle stealthChop
 
-    stepper.setMaxSpeed(10000);
-    stepper.setAcceleration(10000); //12000?
-    stepper.setPinsInverted(false, false, true);
+    stepper.setMaxSpeed(MOTOR_MAX_SPEED);
+    stepper.setAcceleration(MOTOR_MAX_ACCELERATION);
+    stepper.setPinsInverted(direction == BACKWARD, false, true);
     //stepper.enableOutputs();
     timerAttachInterrupt(this->stepTimer, timerFunction, true);
     timerAlarmWrite(this->stepTimer, 1000, true); // 1000: 1ms

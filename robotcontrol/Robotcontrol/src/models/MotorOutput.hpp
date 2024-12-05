@@ -2,6 +2,7 @@
 #define MOTOROUTPUT_HPP_
 
 #include <Arduino.h>
+#include <config.h>
 
 class MotorOutput {
   public:
