@@ -30,27 +30,33 @@ bool CommandParser::handleLine(String &line)
   if (line.startsWith("rpid>"))
   {
     truncateCommand(line);
-    split(line, '>', parts, MAX_COMMAND_PARAMS);
+    split(line, ',', parts, MAX_COMMAND_PARAMS);
     this->control->setRollParams(parts[0].toDouble(), parts[1].toDouble(), parts[2].toDouble());
+    Serial.println(parts[2].toDouble());
     return true;
   }
   if (line.startsWith("spid>"))
   {
     truncateCommand(line);
-    split(line, '>', parts, MAX_COMMAND_PARAMS);
+    split(line, ',', parts, MAX_COMMAND_PARAMS);
     this->control->setSpeedParams(parts[0].toDouble(), parts[1].toDouble(), parts[2].toDouble());
     return true;
   }
   if (line.startsWith("rollsp>")) {
     truncateCommand(line);
-    split(line, '>', parts, MAX_COMMAND_PARAMS);
+    split(line, ',', parts, MAX_COMMAND_PARAMS);
     this->control->setRollSetpoint(parts[0].toDouble());
     return true;
   }
   if (line.startsWith("stltmax>")) {
     truncateCommand(line);
-    split(line, '>', parts, MAX_COMMAND_PARAMS);
+    split(line, ',', parts, MAX_COMMAND_PARAMS);
     this->control->setMaxSpeedPidOutputRad(parts[0].toDouble());
+    return true;
+  }
+  if (line.equals("printpid"))
+  {
+    this->control->printPidValues();
     return true;
   }
   

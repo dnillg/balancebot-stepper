@@ -1,82 +1,128 @@
 #include "Control.hpp"
 #include "config.h"
 
-Control::Control() 
-: rollPID(&input.rollRadAngle, &rollOutput, &rollSetpoint, CONTROL_ROLL_PID_KP, CONTROL_ROLL_PID_KI, CONTROL_ROLL_PID_KD, DIRECT),
-  speedPID(&input.speedStepAvg, &speedPIDOutput, &input.step16SpeedSetpoint, CONTROL_SPEED_PID_KP, CONTROL_SPEED_PID_KI, CONTROL_SPEED_PID_KD, DIRECT),
-  rollPidOutputDampener(CONTROL_FREQUENCY, CONTROL_MAX_ACCELERATION),
-  speedPidOutputDampener(CONTROL_FREQUENCY, CONTROL_MAX_SPEED_PID_OUTPUT_ACCELERATION)
- {
-    speedPID.SetMode(AUTOMATIC);
-    speedPID.SetOutputLimits(-CONTROL_MAX_SPEED_TILT_RAD_OFFSET, CONTROL_MAX_SPEED_TILT_RAD_OFFSET);
-    speedPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
-
-    rollPID.SetMode(AUTOMATIC);
-    rollPID.SetOutputLimits(-CONTROL_MAX_STEP16_SPEED, CONTROL_MAX_STEP16_SPEED);
-    rollPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
+Control::Control()
+    : rollPID(&input.rollRadAngle, &rollOutput, &rollSetpoint, CONTROL_ROLL_PID_KP, CONTROL_ROLL_PID_KI, CONTROL_ROLL_PID_KD, DIRECT),
+      speedPID(&input.speedStepAvg500, &speedPIDOutput, &input.step16SpeedSetpoint, CONTROL_SPEED_PID_KP, CONTROL_SPEED_PID_KI, CONTROL_SPEED_PID_KD, DIRECT),
+      rollPidOutputDampener(CONTROL_FREQUENCY, CONTROL_MAX_ACCELERATION),
+      speedPidOutputDampener(CONTROL_FREQUENCY, CONTROL_MAX_SPEED_PID_OUTPUT_ACCELERATION)
+{
+  speedPID.SetMode(AUTOMATIC);
+  speedPID.SetOutputLimits(-CONTROL_MAX_SPEED_TILT_RAD_OFFSET, CONTROL_MAX_SPEED_TILT_RAD_OFFSET);
+  rollPID.SetMode(AUTOMATIC);
+  rollPID.SetOutputLimits(-CONTROL_MAX_STEP16_SPEED, CONTROL_MAX_STEP16_SPEED);
+  rollPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
+  speedPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
 }
 
-void Control::setRollParams(double kp, double ki, double kd) {
-    rollPID.SetTunings(kp, ki, kd);
+void Control::setRollParams(double kp, double ki, double kd)
+{
+  rollPID.SetTunings(kp, ki, kd);
+  rollPID.resetOutputSum();
 }
 
-void Control::setSpeedParams(double kp, double ki, double kd) {
-    speedPID.SetTunings(kp, ki, kd);
+void Control::setSpeedParams(double kp, double ki, double kd)
+{
+  speedPID.SetTunings(kp, ki, kd);
+  speedPID.resetOutputSum();
 }
 
-void Control::compute() {
-    speedPID.Compute();
-    this->rollSetpoint = speedPidOutputDampener.dampen(rollSetpoint, CONTROL_TARGET_ROLL - speedPIDOutput);
-    rollPID.Compute();
-    motorOutput.speedLeft = rollPidOutputDampener.dampen(motorOutput.speedLeft, rollOutput + input.steerOffset);
-    motorOutput.speedRight = rollPidOutputDampener.dampen(motorOutput.speedRight, rollOutput - input.steerOffset);
+void Control::compute()
+{
+  speedPID.Compute();
+  this->rollSetpoint = CONTROL_TARGET_ROLL - speedPIDOutput; // speedPidOutputDampener.dampen(rollSetpoint, CONTROL_TARGET_ROLL - speedPIDOutput);
+  // if (input.speedStepAvg500 < 100) {
+  //     rollSetpoint = CONTROL_TARGET_ROLL;
+  // }
+  rollPID.Compute();
+  motorOutput.speedLeft = rollPidOutputDampener.dampen(motorOutput.speedLeft, rollOutput + input.steerOffset);
+  motorOutput.speedRight = rollPidOutputDampener.dampen(motorOutput.speedRight, rollOutput - input.steerOffset);
 
-    cycleNo++;
-    if (cycleNo >= 1000) {
-        cycleNo = 0;
-    }
+  cycleNo++;
+  if (cycleNo >= 1000)
+  {
+    cycleNo = 0;
+  }
 }
 
-void Control::setInputAngleRad(double angle) {
-    input.rollRadAngle = angle;
+void Control::setInputAngleRad(double angle)
+{
+  input.rollRadAngle = angle;
 }
 
-void Control::setInputSpeedAvg(double speed) {
-    input.speedStepAvg = normalizeStep16Speed(speed);
+void Control::setInputSpeedAvg250(double speed)
+{
+  input.speedStepAvg250 = normalizeStep16Speed(speed);
 }
 
-int16_t Control::getSteps16Left() {
-    return motorOutput.speedLeft;
+void Control::setInputSpeedAvg500(double speed)
+{
+  input.speedStepAvg500 = normalizeStep16Speed(speed);
 }
 
-int16_t Control::getSteps16Right() {
-    return motorOutput.speedRight;
+int16_t Control::getSteps16Left()
+{
+  return motorOutput.speedLeft;
 }
 
-MotorOutput& Control::getMotorOutput() {
-    return motorOutput;
+int16_t Control::getSteps16Right()
+{
+  return motorOutput.speedRight;
 }
 
-double Control::getRollSetpoint() {
-    return rollSetpoint;
+MotorOutput &Control::getMotorOutput()
+{
+  return motorOutput;
 }
 
-double Control::getRollOutput() {
-    return rollOutput;
+double Control::getRollSetpoint()
+{
+  return rollSetpoint;
 }
 
-double Control::getSpeedPIDOutput() {
-    return speedPIDOutput;
+double Control::getRollOutput()
+{
+  return rollOutput;
 }
 
-uint16_t Control::getCycleNo() {
-    return cycleNo;
+double Control::getSpeedPIDOutput()
+{
+  return speedPIDOutput;
 }
 
-void Control::setRollSetpoint(double rollSetpoint) {
-    this->rollSetpoint = rollSetpoint;
+uint16_t Control::getCycleNo()
+{
+  return cycleNo;
 }
 
-void Control::setMaxSpeedPidOutputRad(double offset) {
-    speedPID.SetOutputLimits(-offset, offset);
+void Control::setRollSetpoint(double rollSetpoint)
+{
+  this->rollSetpoint = rollSetpoint;
+}
+
+void Control::setMaxSpeedPidOutputRad(double offset)
+{
+  speedPID.SetOutputLimits(-offset, offset);
+}
+
+void Control::printPidValues()
+{
+  Serial.print("Roll PID initialized with: ");
+  Serial.print(rollPID.GetKp(), 6);
+  Serial.print(", ");
+  Serial.print(rollPID.GetKi(), 6);
+  Serial.print(", ");
+  Serial.println(rollPID.GetKd(), 6);
+  Serial.print("Speed PID initialized with: ");
+  Serial.print(speedPID.GetKp(), 6);
+  Serial.print(", ");
+  Serial.print(speedPID.GetKi(), 6);
+  Serial.print(", ");
+  Serial.println(speedPID.GetKd(), 6);
+}
+
+void Control::setControlMode(ControlMode mode)
+{
+  this->mode = mode;
+  // Set Speed PID
 }

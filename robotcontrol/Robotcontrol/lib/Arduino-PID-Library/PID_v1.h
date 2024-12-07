@@ -59,7 +59,7 @@ class PID
 	double GetKd();						  // where it's important to know what is actually 
 	int GetMode();						  //  inside the PID.
 	int GetDirection();					  //
-
+  void resetOutputSum();
   private:
 	void Initialize();
 	

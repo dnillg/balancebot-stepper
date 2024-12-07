@@ -7,7 +7,8 @@ struct ControlInput {
   double step16SpeedSetpoint = 0;
   double steerOffset = 0;
   double rollRadAngle = -PI / 2;
-  double speedStepAvg = 0;
+  double speedStepAvg250 = 0;
+  double speedStepAvg500 = 0;
 };
 
 #endif // MODELS_CONTROLINPUT_HPP_

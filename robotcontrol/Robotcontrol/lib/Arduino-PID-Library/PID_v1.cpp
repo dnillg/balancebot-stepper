@@ -182,6 +182,11 @@ void PID::SetMode(int Mode)
     inAuto = newAuto;
 }
 
+void PID::resetOutputSum()
+{
+  outputSum = 0;
+}
+
 /* Initialize()****************************************************************
  *	does all the things that need to happen to ensure a bumpless transfer
  *  from manual to automatic mode.

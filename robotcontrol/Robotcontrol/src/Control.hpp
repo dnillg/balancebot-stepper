@@ -8,9 +8,16 @@
 #include "models/MotorOutput.hpp"
 #include "Dampener.hpp"
 
+enum ControlMode
+{
+  REMOTE_CONTROL,
+  IDLE
+};
+
 class Control
 {
 private:
+  ControlMode mode = IDLE;
   ControlInput input;
   MotorOutput motorOutput;
   Dampener speedPidOutputDampener;
@@ -43,7 +50,8 @@ public:
     this->input.steerOffset = steer * CONTROL_MAX_STEER_STEP16_OFFSET;
   }
   void setInputAngleRad(double angle);
-  void setInputSpeedAvg(double speed);
+  void setInputSpeedAvg250(double speed);
+  void setInputSpeedAvg500(double speed);
   void setMaxSpeedPidOutputRad(double offset);
   void compute();
   int16_t getSteps16Left();
@@ -52,7 +60,9 @@ public:
   double getRollOutput();
   double getSpeedPIDOutput();
   MotorOutput &getMotorOutput();
-  inline uint16_t getCycleNo();
+  uint16_t getCycleNo();
+  void printPidValues();
+  void setControlMode(ControlMode mode);
 };
 
 #endif // CONTROL_HPP_

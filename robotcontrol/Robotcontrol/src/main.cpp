@@ -14,6 +14,7 @@
 #include "models/MotorOutput.hpp"
 #include "Control.hpp"
 #include "CommandParser.hpp"
+#include "StationaryCutoff.hpp"
 
 // ----------------------------------------------------------------------------
 // Types
@@ -53,9 +54,10 @@ struct GlobalState
   Motor rightMotor = Motor(createMotorRightPins(), motorRightTimerFunction, 1, BACKWARD);
   uint64_t counter = 0;
   //RemoteControl remoteControl;
-  SpeedAggregator speedAgg100 = SpeedAggregator(10, 2); // 100ms
   SpeedAggregator speedAgg500 = SpeedAggregator(10, 10); // 500ms
+  SpeedAggregator speedAgg250 = SpeedAggregator(10, 5); // 250ms
   CommandParser commandParser = CommandParser(&leftMotor, &rightMotor, &control);
+  StationaryCutoff stationaryCutoff = StationaryCutoff(20, 20, STATIONARY_CUTOFF_ROLL_RANGE, STATIONARY_CUTOFF_SPEED_RANGE);
 };
 
 GlobalState gstate ;
@@ -198,7 +200,8 @@ void controlTask(void *pvParameters)
       gstate.imu.getData();
       float currentRoll = gstate.imu.getRoll();
       gstate.control.setInputAngleRad(currentRoll);
-      gstate.control.setInputSpeedAvg(gstate.speedAgg500.getSpeed());
+      gstate.control.setInputSpeedAvg250(gstate.speedAgg250.getSpeed());
+      gstate.control.setInputSpeedAvg500(gstate.speedAgg500.getSpeed());
 
       gstate.control.compute();
 
@@ -218,12 +221,19 @@ void controlTask(void *pvParameters)
         Serial.println(step16SpeedRight);
       }
       #endif
-      gstate.leftMotor.setSpeed(step16SpeedLeft);
-      gstate.rightMotor.setSpeed(step16SpeedRight);
+      gstate.leftMotor.setSpeed(gstate.stationaryCutoff.filter(step16SpeedLeft)); 
+      gstate.rightMotor.setSpeed(gstate.stationaryCutoff.filter(step16SpeedRight));
 
-      int16_t currentSpeed = (((int32_t)step16SpeedLeft) + step16SpeedRight) / 2;
-      gstate.speedAgg100.consume(currentSpeed);
+      int16_t controlSpeed = (((int32_t)step16SpeedLeft) + step16SpeedRight) / 2;
+      #if STATIONARY_CUTOFF_ENABLED == true
+      gstate.stationaryCutoff.consumeRollAndMotorSpeed(currentRoll, controlSpeed);
+      int16_t currentSpeed = gstate.stationaryCutoff.filter(controlSpeed);
+      #else
+      int16_t currentSpeed = controlSpeed;
+      #endif
       gstate.speedAgg500.consume(currentSpeed);
+      gstate.speedAgg250.consume(currentSpeed);
+
       
       gstate.failSafe.heartBeat();
     }
