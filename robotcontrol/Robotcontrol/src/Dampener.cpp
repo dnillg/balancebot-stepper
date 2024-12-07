@@ -1,15 +1,14 @@
-#include "StepperDampener.hpp"
+#include "Dampener.hpp"
 
-StepperDampener::StepperDampener(uint16_t controlFrequency, uint16_t maxAccPerSec)
+Dampener::Dampener(uint16_t controlFrequency, double maxAccPerSec)
 {
   this->controlPeriodMillis = 1000 / controlFrequency;
   this->maxAccPerSec = maxAccPerSec;
   this->maxAccPerPeriod = (uint32_t) maxAccPerSec / controlFrequency;
 }
 
-double StepperDampener::getDampenedSpeed(double prev, double current, uint16_t microStepping)
+double Dampener::dampen(double prev, double current)
 {
-  //TODO: Implement microstepping
   if (prev < current && current - prev > maxAccPerPeriod)
   {
     current = prev + maxAccPerPeriod;

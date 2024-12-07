@@ -10,42 +10,47 @@ CommandParser::CommandParser(Motor *motorLeft, Motor *motorRight, Control *contr
 bool CommandParser::handleLine(String &line)
 {
   String parts[MAX_COMMAND_PARAMS];
+  if (line.startsWith("c>")) {
+    split(line, '>', parts, MAX_COMMAND_PARAMS);
+    this->control->setRemoteControlInput(parts[0].toInt() / 128.0, parts[1].toInt() / 128.0);
+    return true;
+  }
   if (line.equals("moff"))
   {
     motorLeft->disable();
     motorRight->disable();
     return true;
   }
-  else if (line.equals("moon"))
+  if (line.equals("moon"))
   {
     motorLeft->enable();
     motorRight->enable();
     return true;
   }
-  else if (line.startsWith("rpid>"))
+  if (line.startsWith("rpid>"))
   {
     truncateCommand(line);
     split(line, '>', parts, MAX_COMMAND_PARAMS);
     this->control->setRollParams(parts[0].toDouble(), parts[1].toDouble(), parts[2].toDouble());
     return true;
   }
-  else if (line.startsWith("spid>"))
+  if (line.startsWith("spid>"))
   {
     truncateCommand(line);
     split(line, '>', parts, MAX_COMMAND_PARAMS);
     this->control->setSpeedParams(parts[0].toDouble(), parts[1].toDouble(), parts[2].toDouble());
     return true;
   }
-  else if (line.startsWith("rollsp>")) {
+  if (line.startsWith("rollsp>")) {
     truncateCommand(line);
     split(line, '>', parts, MAX_COMMAND_PARAMS);
     this->control->setRollSetpoint(parts[0].toDouble());
     return true;
   }
-  else if (line.startsWith("stltmax>")) {
+  if (line.startsWith("stltmax>")) {
     truncateCommand(line);
     split(line, '>', parts, MAX_COMMAND_PARAMS);
-    this->control->setMaxSpeedTiltRadOffset(parts[0].toDouble());
+    this->control->setMaxSpeedPidOutputRad(parts[0].toDouble());
     return true;
   }
   

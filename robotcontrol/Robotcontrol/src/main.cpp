@@ -14,7 +14,6 @@
 #include "models/MotorOutput.hpp"
 #include "Control.hpp"
 #include "CommandParser.hpp"
-//#include "models/RemoteControl.hpp"
 
 // ----------------------------------------------------------------------------
 // Types
@@ -173,7 +172,7 @@ void failsafeTask(void *pvParameters)
 {
   while (!gstate.initialized)
   {
-    delay(1);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
   while (true)
   {
@@ -183,7 +182,7 @@ void failsafeTask(void *pvParameters)
       gstate.rightMotor.disable();
       Serial.println("Failsafe activated!");
     }
-    vTaskDelay(100 / portTICK_PERIOD_MS); // Allow other tasks to run
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
 
@@ -200,8 +199,6 @@ void controlTask(void *pvParameters)
       float currentRoll = gstate.imu.getRoll();
       gstate.control.setInputAngleRad(currentRoll);
       gstate.control.setInputSpeedAvg(gstate.speedAgg500.getSpeed());
-      gstate.control.setInputTargetSpeedProportion(0.0); //TODO: Remote Control
-      gstate.control.setInputSteerProportion(0.0);  //TODO: Remote Control
 
       gstate.control.compute();
 

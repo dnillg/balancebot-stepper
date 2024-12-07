@@ -4,45 +4,55 @@
 #include <Arduino.h>
 #include <PID_v1.h>
 
-#include "models/RemoteControl.hpp"
 #include "models/ControlInput.hpp"
 #include "models/MotorOutput.hpp"
-#include "StepperDampener.hpp"
+#include "Dampener.hpp"
 
 class Control
 {
 private:
   ControlInput input;
   MotorOutput motorOutput;
-  StepperDampener stepperDampener;
+  Dampener speedPidOutputDampener;
+  Dampener rollPidOutputDampener;
   // Speed PID
   PID speedPID;
-  double targetStep16Speed;
   double speedPIDOutput;
   // Roll PID
   PID rollPID;
   double rollSetpoint;
   double rollOutput;
-  double normalizeStep16Speed(double speed);
+  inline double normalizeStep16Speed(double speed) {
+    if (MOTOR_MAX_MICROSTEPPING == 16) {
+      return speed;
+    }
+    return speed * 16 / MOTOR_MAX_MICROSTEPPING;
+  }
   uint16_t cycleNo = 0;
+
 public:
   Control();
   void setRollParams(double kp, double ki, double kd);
   void setRollSetpoint(double rollSetpoint);
   void setSpeedParams(double kp, double ki, double kd);
+  inline void setRemoteControlInput(double speed, double steer)
+  {
+    this->input.targetSpeedProportion = speed;
+    this->input.steerProportion = steer;
+    this->input.step16SpeedSetpoint = speed * CONTROL_MAX_STEP16_SPEED;
+    this->input.steerOffset = steer * CONTROL_MAX_STEER_STEP16_OFFSET;
+  }
   void setInputAngleRad(double angle);
   void setInputSpeedAvg(double speed);
-  void setInputTargetSpeedProportion(double speed);
-  void setInputSteerProportion(double steer);
-  void setMaxSpeedTiltRadOffset(double offset);
+  void setMaxSpeedPidOutputRad(double offset);
   void compute();
   int16_t getSteps16Left();
   int16_t getSteps16Right();
   double getRollSetpoint();
   double getRollOutput();
   double getSpeedPIDOutput();
-  MotorOutput& getMotorOutput();
-  uint16_t getCycleNo();
+  MotorOutput &getMotorOutput();
+  inline uint16_t getCycleNo();
 };
 
 #endif // CONTROL_HPP_
