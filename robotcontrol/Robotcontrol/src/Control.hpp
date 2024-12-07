@@ -27,7 +27,7 @@ private:
   double speedPIDOutput;
   // Roll PID
   PID rollPID;
-  double rollSetpoint;
+  double rollSetpoint = CONTROL_TARGET_ROLL;
   double rollOutput;
   inline double normalizeStep16Speed(double speed) {
     if (MOTOR_MAX_MICROSTEPPING == 16) {

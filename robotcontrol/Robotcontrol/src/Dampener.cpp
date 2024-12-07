@@ -2,9 +2,9 @@
 
 Dampener::Dampener(uint16_t controlFrequency, double maxAccPerSec)
 {
-  this->controlPeriodMillis = 1000 / controlFrequency;
+  this->controlPeriodMillis = 1000.0 / controlFrequency;
   this->maxAccPerSec = maxAccPerSec;
-  this->maxAccPerPeriod = (uint32_t) maxAccPerSec / controlFrequency;
+  this->maxAccPerPeriod = ((double) maxAccPerSec) / controlFrequency;
 }
 
 double Dampener::dampen(double prev, double current)

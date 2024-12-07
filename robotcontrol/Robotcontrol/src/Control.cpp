@@ -30,10 +30,7 @@ void Control::setSpeedParams(double kp, double ki, double kd)
 void Control::compute()
 {
   speedPID.Compute();
-  this->rollSetpoint = CONTROL_TARGET_ROLL - speedPIDOutput; // speedPidOutputDampener.dampen(rollSetpoint, CONTROL_TARGET_ROLL - speedPIDOutput);
-  // if (input.speedStepAvg500 < 100) {
-  //     rollSetpoint = CONTROL_TARGET_ROLL;
-  // }
+  this->rollSetpoint = speedPidOutputDampener.dampen(rollSetpoint, CONTROL_TARGET_ROLL - speedPIDOutput);
   rollPID.Compute();
   motorOutput.speedLeft = rollPidOutputDampener.dampen(motorOutput.speedLeft, rollOutput + input.steerOffset);
   motorOutput.speedRight = rollPidOutputDampener.dampen(motorOutput.speedRight, rollOutput - input.steerOffset);

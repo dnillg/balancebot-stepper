@@ -6,7 +6,7 @@
 class Dampener
 {
 private:
-  uint16_t controlPeriodMillis;
+  double controlPeriodMillis;
   double maxAccPerSec;
   double maxAccPerPeriod;
 
