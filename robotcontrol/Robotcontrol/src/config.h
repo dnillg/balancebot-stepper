@@ -3,6 +3,12 @@
 #define CONFIG_H
 
 // ----------------------------------------------------------------------------
+// Logging
+// ----------------------------------------------------------------------------
+
+#define PRINT_CONTROL_STATE false
+
+// ----------------------------------------------------------------------------
 // Motor Config
 // ----------------------------------------------------------------------------
 
@@ -35,18 +41,18 @@
 #define CONTROL_TASK_ENABLED true
 #define CONTROL_FREQUENCY 200 // Hz
 
-#define CONTROL_TARGET_ROLL -1.53
+#define CONTROL_TARGET_ROLL -1.55
 #define CONTROL_MAX_ROLL_SPEED_STEPS 1000
-#define CONTROL_MAX_TILT_RAD_OFFSET 0.1745 // 10 degrees in radians
+#define CONTROL_MAX_SPEED_TILT_RAD_OFFSET 0.1745 // 10 degrees in radians
 #define CONTROL_MAX_STEER_STEP16_OFFSET 200
 
-#define CONTROL_ROLL_PID_KP 15000
+#define CONTROL_ROLL_PID_KP 44000
 #define CONTROL_ROLL_PID_KI 0
-#define CONTROL_ROLL_PID_KD 600
+#define CONTROL_ROLL_PID_KD 1800
 
-#define CONTROL_SPEED_PID_KP 0.0
+#define CONTROL_SPEED_PID_KP 0.00003
 #define CONTROL_SPEED_PID_KI 0.0
-#define CONTROL_SPEED_PID_KD 0.0
+#define CONTROL_SPEED_PID_KD 0.001
 
 #define CONTROL_MAX_STEP16_SPEED 8000
 #define CONTROL_MAX_ACCERATION 40000

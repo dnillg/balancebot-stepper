@@ -13,6 +13,7 @@
 #include "SpeedAggregator.hpp"
 #include "models/MotorOutput.hpp"
 #include "Control.hpp"
+#include "CommandParser.hpp"
 //#include "models/RemoteControl.hpp"
 
 // ----------------------------------------------------------------------------
@@ -55,9 +56,10 @@ struct GlobalState
   //RemoteControl remoteControl;
   SpeedAggregator speedAgg100 = SpeedAggregator(10, 2); // 100ms
   SpeedAggregator speedAgg500 = SpeedAggregator(10, 10); // 500ms
+  CommandParser commandParser = CommandParser(&leftMotor, &rightMotor, &control);
 };
 
-GlobalState gstate;
+GlobalState gstate ;
 
 // ----------------------------------------------------------------------------
 // Mutex
@@ -156,12 +158,15 @@ void setup()
   Serial.println("Initialization complete.");
 }
 
-int nextSpeed = 0;
-uint64_t setSpeedAt=0;
-
 void loop()
 {
-  return;
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    input.trim();
+    Serial.print("Received: ");
+    Serial.println(input);
+    gstate.commandParser.handleLine(input);
+  }
 }
 
 void failsafeTask(void *pvParameters)
@@ -202,18 +207,20 @@ void controlTask(void *pvParameters)
 
       int16_t step16SpeedLeft = gstate.control.getSteps16Left();
       int16_t step16SpeedRight = gstate.control.getSteps16Right();
+      #if PRINT_CONTROL_STATE == true 
       if (gstate.control.getCycleNo() % 40 == 0) {
         Serial.print("Roll: ");
-        Serial.print(currentRoll);
+        Serial.print(currentRoll, 4);
         Serial.print(", Speed: ");
         Serial.print(gstate.speedAgg500.getSpeed());
         Serial.print(", Setpoint: ");
-        Serial.print(gstate.control.getRollSetpoint());
+        Serial.print(gstate.control.getRollSetpoint(), 4);
         Serial.print(", Left: ");
         Serial.print(step16SpeedLeft);
         Serial.print(", Right: ");
         Serial.println(step16SpeedRight);
       }
+      #endif
       gstate.leftMotor.setSpeed(step16SpeedLeft);
       gstate.rightMotor.setSpeed(step16SpeedRight);
 

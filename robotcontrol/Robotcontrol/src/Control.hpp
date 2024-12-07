@@ -28,11 +28,13 @@ private:
 public:
   Control();
   void setRollParams(double kp, double ki, double kd);
+  void setRollSetpoint(double rollSetpoint);
   void setSpeedParams(double kp, double ki, double kd);
   void setInputAngleRad(double angle);
   void setInputSpeedAvg(double speed);
   void setInputTargetSpeedProportion(double speed);
   void setInputSteerProportion(double steer);
+  void setMaxSpeedTiltRadOffset(double offset);
   void compute();
   int16_t getSteps16Left();
   int16_t getSteps16Right();

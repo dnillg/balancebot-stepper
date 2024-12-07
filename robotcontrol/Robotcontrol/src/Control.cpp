@@ -7,7 +7,7 @@ Control::Control()
   stepperDampener(CONTROL_FREQUENCY, CONTROL_MAX_ACCERATION)
  {
     speedPID.SetMode(AUTOMATIC);
-    speedPID.SetOutputLimits(-CONTROL_MAX_TILT_RAD_OFFSET, CONTROL_MAX_TILT_RAD_OFFSET);
+    speedPID.SetOutputLimits(-CONTROL_MAX_SPEED_TILT_RAD_OFFSET, CONTROL_MAX_SPEED_TILT_RAD_OFFSET);
     speedPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
 
     rollPID.SetMode(AUTOMATIC);
@@ -20,13 +20,13 @@ void Control::setRollParams(double kp, double ki, double kd) {
 }
 
 void Control::setSpeedParams(double kp, double ki, double kd) {
-    rollPID.SetTunings(kp, ki, kd);
+    speedPID.SetTunings(kp, ki, kd);
 }
 
 void Control::compute() {
     // input.speedStepAvg avg speed is already set
     speedPID.Compute();
-    rollSetpoint = speedPIDOutput + CONTROL_TARGET_ROLL;
+    rollSetpoint = CONTROL_TARGET_ROLL - speedPIDOutput;
     rollPID.Compute();
     motorOutput.speedLeft = stepperDampener.getDampenedSpeed(motorOutput.speedLeft, rollOutput - input.steerProportion * CONTROL_MAX_STEER_STEP16_OFFSET, MOTOR_MAX_MICROSTEPPING);
     motorOutput.speedRight = stepperDampener.getDampenedSpeed(motorOutput.speedRight, rollOutput - input.steerProportion * CONTROL_MAX_STEER_STEP16_OFFSET, MOTOR_MAX_MICROSTEPPING);
@@ -86,4 +86,12 @@ double Control::getSpeedPIDOutput() {
 
 uint16_t Control::getCycleNo() {
     return cycleNo;
+}
+
+void Control::setRollSetpoint(double rollSetpoint) {
+    this->rollSetpoint = rollSetpoint;
+}
+
+void Control::setMaxSpeedTiltRadOffset(double offset) {
+    speedPID.SetOutputLimits(-offset, offset);
 }
