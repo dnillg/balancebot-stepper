@@ -79,13 +79,13 @@
 #define PIN_TMC5160_LEFT_EN 32
 
 #define PIN_TMC5160_RIGHT_DIR 4
-#define PIN_TMC5160_RIGHT_STP 16 // 26
+#define PIN_TMC5160_RIGHT_STP 26 // old: 16
 #define PIN_TMC5160_RIGHT_CLK -1
 #define PIN_TMC5160_RIGHT_MISO 19
 #define PIN_TMC5160_RIGHT_CS 5
 #define PIN_TMC5160_RIGHT_SCK 18
 #define PIN_TMC5160_RIGHT_MOSI 23
-#define PIN_TMC5160_RIGHT_EN 26 // 33
+#define PIN_TMC5160_RIGHT_EN 33 // old: 26
 
 #define PIN_BNO085_SCL 14
 #define PIN_BNO085_SDA 13
@@ -97,6 +97,6 @@
 #define PIN_BNO085_PSO 12
 
 #define PIN_SERIAL_RX 17
-#define PIN_SERIAL_TX -1 //old: 25 //new: 16
+#define PIN_SERIAL_TX 16 // old: 25
 
 #endif /* CONFIG_H */
