@@ -1,55 +1,63 @@
-package com.dnillg.balancer.controlapp.bt
+package com.dnillg.balancer.controlapp.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.util.Log
+import com.dnillg.balancer.controlapp.serial.SerialInterface
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.util.UUID
 
-interface IBtConnection
-
-class BtConnection(
+class BtConnection (
     private val device : BluetoothDevice,
-) : IBtConnection {
+) : SerialInterface {
 
     private var consecutiveErrorCount: Long = 0;
     private var socket : BluetoothSocket = createSocket(device)
     private var bufferedReader: BufferedReader = BufferedReader(InputStreamReader(socket.inputStream))
     private var bufferedWriter: BufferedWriter = BufferedWriter(OutputStreamWriter(socket.outputStream))
 
-    fun reconnect() {
+    override fun reconnect() {
+        closeResources();
         this.socket = createSocket(this.device);
         this.bufferedReader = BufferedReader(InputStreamReader(socket.inputStream));
         this.bufferedWriter = BufferedWriter(OutputStreamWriter(socket.outputStream));
     }
 
-    fun isAlive() : Boolean {
-        return socket.isConnected && consecutiveErrorCount <= 10;
-    }
-
-    fun close() {
-        if (socket.isConnected) {
-            socket.close();
+    private fun closeResources() {
+        try {
+            if (socket.isConnected) {
+                socket.close();
+            }
+        } catch (e: Exception) {
+            Log.e(this::class.simpleName, "Error closing socket", e)
         }
     }
 
-    fun readLine(): String? {
+    override fun isAlive() : Boolean {
+        return socket.isConnected && consecutiveErrorCount <= 10;
+    }
+
+    override fun close() {
+        closeResources()
+    }
+
+    override fun readLine(): String? {
         try {
             val line = bufferedReader.readLine()
             consecutiveErrorCount = 0;
             return line;
         } catch (e: Exception) {
-            Log.e("BtConnection", "Error reading line", e)
+            Log.e(this::class.simpleName, "Error reading line", e)
             consecutiveErrorCount++;
             return null;
         }
     }
 
-    fun writeLine(line: String) {
+    override fun writeLine(line: String) {
         if (!socket.isConnected) {
             this.reconnect();
         }

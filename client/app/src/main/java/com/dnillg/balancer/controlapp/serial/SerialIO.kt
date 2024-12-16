@@ -4,7 +4,7 @@ import com.dnillg.balancer.controlapp.serial.model.ErrorSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.SerialUnit
 import com.dnillg.balancer.controlapp.serial.serialization.SerialUnitSerializer
 
-class SerialIO constructor(
+class SerialIO(
   private val serializers: Set<SerialUnitSerializer<*>>
 ) {
 

@@ -1,6 +1,7 @@
 package com.dnillg.balancer.controlapp
 
 import com.dnillg.balancer.controlapp.serial.SerialIO
+import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.serialization.ControlSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.DiagDataSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.SerialUnitSerializer
@@ -23,8 +24,8 @@ class MainModule {
     }
 
     @Provides
-    fun serialUnitThreadFactory(serialIO: SerialIO): SerialUnitThreadFactory {
-        return SerialUnitThreadFactory(serialIO);
+    fun serialUnitThreadFactory(serialIO: SerialIO): SerialWorkerFactory {
+        return SerialWorkerFactory(serialIO);
     }
 
 }

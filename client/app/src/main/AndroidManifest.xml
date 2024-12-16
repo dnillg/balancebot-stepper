@@ -22,6 +22,7 @@
         android:theme="@style/Theme.ControlApp"
         tools:targetApi="31">
         <activity
+            android:screenOrientation="landscape"
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
