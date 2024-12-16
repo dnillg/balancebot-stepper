@@ -9,7 +9,7 @@ BluetoothSerial SerialBT;
 const char *bluetoothDeviceName = "balance-robot";
 
 unsigned long lastPrintTime = 0;
-const unsigned long printInterval = 250; // Interval to print metrics (50 ms)
+const unsigned long printInterval = 50; // Interval to print metrics (50 ms)
 
 // Function to generate a sine wave with a given frequency and phase
 float generateSineWave(float time, float frequency, float phase) {
