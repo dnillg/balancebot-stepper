@@ -39,7 +39,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dnillg.balancer.controlapp.bluetooth.BtConnection
-import com.dnillg.balancer.controlapp.sensor.ChartEntryWindow
+import com.dnillg.balancer.controlapp.chart.TimeSeriesChartEntry
+import com.dnillg.balancer.controlapp.timeseries.TimeSeriesWindow
+import com.dnillg.balancer.controlapp.chart.SinusGenerator
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.model.DiagDataSerialUnit
@@ -47,24 +49,49 @@ import com.dnillg.balancer.controlapp.ui.theme.ControlAppTheme
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
-import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
+
+data class MainActivityAsyncJobs(
+  var chartRenderer: Job? = null,
+  var sinGenerator: Job? = null
+)
 
 class MainActivity @Inject constructor() : ComponentActivity() {
 
   @Inject
   lateinit var serialWorkerFactory: SerialWorkerFactory
+  private val asyncJobs: MainActivityAsyncJobs = MainActivityAsyncJobs()
+  private var serialWorker: SerialWorker? = null
+  private var btConnection: BtConnection? = null
+  private val chartTimeSeriesWindow = TimeSeriesWindow(
+    duration = 5.0,
+    entryCreator = { timeSeries, value -> TimeSeriesChartEntry(timeSeries, value) }
+  )
+  private val sinusGeneratorA =
+    SinusGenerator(samplesPerSecond = 100, amplitude = 100.0, frequency = 2.0) {
+      chartTimeSeriesWindow.addPoint("sensor1", it)
+    }
+  private val sinusGeneratorB =
+    SinusGenerator(samplesPerSecond = 100, amplitude = 80.0, frequency = 1.0) {
+      chartTimeSeriesWindow.addPoint("sensor2", it)
+    }
 
-  private var serialWorker: SerialWorker? = null;
-  private var btConnection: BtConnection? = null;
-  private val chartChartEntryWindow = ChartEntryWindow(seconds = 5.0).apply {
-    generateSin("sensor1", 200,0.0)
-    generateSin("sensor2", 200, 0.5)
+  //TODO: Remove
+  private val counter: AtomicInteger = AtomicInteger(0)
+
+  init {
+    chartTimeSeriesWindow.init("sensor1", 100);
+    chartTimeSeriesWindow.init("sensor2", 100);
+    sinusGeneratorA.generate(100 * 5);
+    sinusGeneratorB.generate(100 * 5);
   }
 
   private var lineChart: LineChart? = null;
@@ -78,6 +105,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         Box(
           modifier = Modifier
             .fillMaxSize()
+            .background(Color.Black)
             .systemBarsPadding() // Prevent content from overlapping system UI
         ) {
           DefaultLayout()
@@ -108,8 +136,9 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     Row(
       modifier = Modifier
         .fillMaxSize()
-        .padding(16.dp),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
+        .background(Color.Black)
+        .padding(0.dp),
+      horizontalArrangement = Arrangement.spacedBy(0.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
       Box(
@@ -124,15 +153,39 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         modifier = Modifier
           .width(240.dp)
           .fillMaxHeight()
-          .background(Color.Blue),
+          .padding(8.dp)
+          .background(Color.DarkGray),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
-        Button(onClick = { CoroutineScope(Dispatchers.Main).launch { connectBluetooth() } }) {
-          Text("Button 1")
+        Button(onClick = {
+          CoroutineScope(Dispatchers.Main).launch {
+            asyncJobs.chartRenderer?.cancel()
+            asyncJobs.chartRenderer = null;
+            asyncJobs.sinGenerator?.cancel()
+            asyncJobs.sinGenerator = null;
+          }
+        }) {
+          Text("Stop Jobs")
         }
-        Button(onClick = { /* TODO */ }) {
-          Text("Button 2")
+        Button(onClick = {
+          asyncJobs.chartRenderer = CoroutineScope(Dispatchers.Main).launch {
+            while (true) {
+              val values = counter.getAndSet(0)
+              sinusGeneratorA.generate(values);
+              sinusGeneratorB.generate(values);
+              lineChart!!.invalidate()
+              delay(33);
+            }
+          }
+          asyncJobs.sinGenerator = CoroutineScope(Dispatchers.Default).launch {
+            while (true) {
+              counter.incrementAndGet()
+              delay(5);
+            }
+          }
+        }) {
+          Text("Rendering Test")
         }
         Button(onClick = {
           CoroutineScope(Dispatchers.Main).launch {
@@ -146,7 +199,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             }
           }
         }) {
-          Text("Button 3")
+          Text("Bluetooth")
         }
       }
     }
@@ -174,7 +227,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       }
     }
 
-    val dataSet = LineDataSet(chartChartEntryWindow.getPoints("sensor1"), "Sample Data").apply {
+    val dataSet = LineDataSet(chartTimeSeriesWindow.getPoints("sensor1"), "Sample Data").apply {
       color = Color.Red.toArgb()
       //valueTextColor = Color.Blue.toArgb()
       lineWidth = 1f
@@ -182,7 +235,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       setDrawCircles(false)
     }
 
-    val dataSet2 = LineDataSet(chartChartEntryWindow.getPoints("sensor2"), "Sample Data2").apply {
+    val dataSet2 = LineDataSet(chartTimeSeriesWindow.getPoints("sensor2"), "Sample Data2").apply {
       color = Color.Blue.toArgb()
       //valueTextColor = Color.Blue.toArgb()
       lineWidth = 1f
