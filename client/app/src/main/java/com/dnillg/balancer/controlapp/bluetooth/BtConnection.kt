@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.util.Log
 import com.dnillg.balancer.controlapp.serial.SerialInterface
+import kotlinx.coroutines.Job
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
@@ -19,6 +20,8 @@ class BtConnection (
     private var socket : BluetoothSocket = createSocket(device)
     private var bufferedReader: BufferedReader = BufferedReader(InputStreamReader(socket.inputStream))
     private var bufferedWriter: BufferedWriter = BufferedWriter(OutputStreamWriter(socket.outputStream))
+    override var isClosed = false
+        private set
 
     override fun reconnect() {
         closeResources();
@@ -42,6 +45,7 @@ class BtConnection (
     }
 
     override fun close() {
+        isClosed = true;
         closeResources()
     }
 

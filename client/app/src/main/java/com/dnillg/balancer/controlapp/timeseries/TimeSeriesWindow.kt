@@ -12,19 +12,22 @@ class TimeSeriesWindow<T : TimeSeriesEntry> (
   private val entryCreator: (TimeSeriesConfig, Float) -> T
 ) {
 
-  fun addPoint(name: String, value: Float) {
+  fun addPoint(name: String, value: Float?) {
     val sensorPoints = seriesPoints.getOrPut(name, this::emptyList)
     val timeSeriesConfig = seriesConfigs.getOrPut(name, { TimeSeriesConfig() })
-    sensorPoints.add(entryCreator.invoke(timeSeriesConfig, value))
     val min = duration * timeSeriesConfig.diffMultiplier * timeSeriesConfig.samplesPerSecond;
-    while(!sensorPoints.isEmpty() && sensorPoints.first.value < - min) {
+    if (value != null) {
+      sensorPoints.add(entryCreator.invoke(timeSeriesConfig, value))
+    }
+    while (!sensorPoints.isEmpty() && sensorPoints.first().value < -min) {
       sensorPoints.removeFirst()
     }
     seriesConfigs[name]!!.next();
   }
 
   fun getPoints(name: String) : List<T> {
-    return seriesPoints.getOrElse(name, this::emptyList)
+    seriesPoints.putIfAbsent(name, emptyList())
+    return seriesPoints[name]!!
   }
 
   fun clear() {

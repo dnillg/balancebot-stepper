@@ -22,7 +22,7 @@ data class SerialWorkerListener(
 
 class SerialWorker(
 
-  private val btConnection: BtConnection,
+  private val btConnection: SerialInterface,
   private val serial: SerialIO,
   private val listeners: MutableList<SerialWorkerListener> = ArrayList(),
   private val unitsToSend: MutableList<SerialUnit> = ArrayList(),
@@ -30,7 +30,6 @@ class SerialWorker(
 ) : Runnable {
 
   private val taskScope = CoroutineScope(Dispatchers.Default + Job())
-  private var shouldContinue = true;
 
   override fun run() {
     taskScope.launch {
@@ -45,7 +44,7 @@ class SerialWorker(
   }
 
   private suspend fun sentinelRoutine() {
-    while (shouldContinue) {
+    while (!btConnection.isClosed) {
       if (!btConnection.isAlive()) {
         try {
           btConnection.reconnect()
@@ -58,7 +57,7 @@ class SerialWorker(
   }
 
   private suspend fun writeRoutine() {
-    while (shouldContinue) {
+    while (!btConnection.isClosed) {
       mutex.withLock {
         unitsToSend.forEach {
           btConnection.writeLine(serial.send(it))
@@ -69,7 +68,7 @@ class SerialWorker(
   }
 
   private suspend fun readRoutine() {
-    while (shouldContinue) {
+    while (!btConnection.isClosed) {
       val line = btConnection.readLine();
       if (line != null) {
         val unit = serial.receive(line);
@@ -95,7 +94,6 @@ class SerialWorker(
   }
 
   fun stop() {
-    shouldContinue = false;
     taskScope.cancel();
   }
 
