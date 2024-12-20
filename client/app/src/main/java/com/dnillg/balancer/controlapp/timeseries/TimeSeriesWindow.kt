@@ -41,6 +41,7 @@ class TimeSeriesWindow<T : TimeSeriesEntry> (
 
   fun init(name: String, samplesPerSecond: Int = 200) {
     this.seriesConfigs[name] = TimeSeriesConfig(samplesPerSecond)
+    addPoint(name, 0.0f)
   }
 
   private fun emptyList() = LinkedList<T>()

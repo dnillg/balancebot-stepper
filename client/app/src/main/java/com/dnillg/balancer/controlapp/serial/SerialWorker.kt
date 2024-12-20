@@ -97,9 +97,18 @@ class SerialWorker(
     taskScope.cancel();
   }
 
-  fun send(unit: SerialUnit) {
+  fun enqueue(unit: SerialUnit) {
     taskScope.launch {
       mutex.withLock {
+        unitsToSend.add(unit);
+      }
+    }
+  }
+
+  fun enqueueAndRemoveOthers(unit: SerialUnit) {
+    taskScope.launch {
+      mutex.withLock {
+        unitsToSend.removeIf { it.javaClass == unit.javaClass }
         unitsToSend.add(unit);
       }
     }
