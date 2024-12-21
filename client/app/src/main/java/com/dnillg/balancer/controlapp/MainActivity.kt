@@ -52,9 +52,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dnillg.balancer.controlapp.bluetooth.BtConnection
-import com.dnillg.balancer.controlapp.chart.TimeSeriesChartEntry
+import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesChartEntry
 import com.dnillg.balancer.controlapp.timeseries.TimeSeriesWindow
-import com.dnillg.balancer.controlapp.chart.SinusGenerator
+import com.dnillg.balancer.controlapp.domain.chart.SinusGenerator
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.model.DiagDataSerialUnit
@@ -83,56 +83,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.dnillg.balancer.controlapp.chart.TimeSeriesType
-import com.dnillg.balancer.controlapp.chart.chartConfigurations
+import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesType
+import com.dnillg.balancer.controlapp.domain.chart.chartConfigurations
 import com.dnillg.balancer.controlapp.components.Joystick
+import com.dnillg.balancer.controlapp.domain.model.PIDType
+import com.dnillg.balancer.controlapp.domain.model.PIDValues
 import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
-import com.dnillg.balancer.controlapp.serial.model.PIDType
+import com.dnillg.balancer.controlapp.serial.model.GetPIDSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
-import kotlin.math.abs
 
 data class MainActivityAsyncJobs(
   var chartRenderer: Job? = null,
   var sinGenerator: Job? = null,
 )
-
-data class PIDValues(
-  val pidType: PIDType? = null,
-  val p: Float = 0.0f,
-  val i: Float = 0.0f,
-  val d: Float = 0.0f,
-) {
-  fun incP(prop: Float) = this.copy(p = calcNewValue(this.p, prop))
-  fun incI(prop: Float) = this.copy(i = calcNewValue(this.i, prop))
-  fun incD(prop: Float) = this.copy(d = calcNewValue(this.d, prop))
-
-  private fun calcNewValue(prevValue: Float, absProp: Float): Float {
-    var prop = absProp;
-    if (prevValue < 0f) {
-      prop = -absProp
-    }
-    val newValue = prevValue * (1.0f + absProp)
-    if (abs(newValue) < 0.001f && newValue > 0f && prop < 0.0f) {
-      return 0f
-    }
-    if (abs(newValue) < 0.001f && newValue < 0f && prop > 0.0f) {
-      return 0f
-    }
-
-    if (abs(newValue) < 0.001f && prop < 0f) {
-      return -0.001f
-    }
-    if (abs(newValue) < 0.001f && prop > 0f) {
-      return 0.001f
-    }
-
-    return newValue
-  }
-
-  fun initialized(): Boolean {
-    return p != 0.0f || i != 0.0f || d != 0.0f
-  }
-}
 
 class MainActivity @Inject constructor() : ComponentActivity() {
 
@@ -301,7 +264,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         LargeButton("Roll", Color.DarkGray, Color.White, {pidValues.value = PIDValues(PIDType.ROLL)})
         LargeButton("Speed", Color.DarkGray, Color.White, {
           pidValues.value = PIDValues(PIDType.SPEED)
-          serialWorker?.enqueue(GetPidSerialUnit(PIDType.SPEED))
+          serialWorker?.enqueue(GetPIDSerialUnit(PIDType.SPEED))
         })
       }
       PidValueRow(pidValues, {pv -> pv.p}, {inc ->

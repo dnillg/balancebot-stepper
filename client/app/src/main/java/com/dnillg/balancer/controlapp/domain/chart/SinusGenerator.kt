@@ -1,4 +1,4 @@
-package com.dnillg.balancer.controlapp.chart
+package com.dnillg.balancer.controlapp.domain.chart
 
 import kotlin.math.sin
 

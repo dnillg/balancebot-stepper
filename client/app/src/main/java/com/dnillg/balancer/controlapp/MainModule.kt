@@ -4,6 +4,7 @@ import com.dnillg.balancer.controlapp.serial.SerialIO
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.serialization.ControlSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.DiagDataSerializer
+import com.dnillg.balancer.controlapp.serial.serialization.GetPIDSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.SerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.SetPIDSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.TriggerSerialUnitSerializer
@@ -18,6 +19,7 @@ class MainModule {
         val serializers = HashSet<SerialUnitSerializer<*>>();
         serializers.add(DiagDataSerializer());
         serializers.add(SetPIDSerialUnitSerializer());
+        serializers.add(GetPIDSerialUnitSerializer());
         serializers.add(ControlSerialUnitSerializer());
         serializers.add(TriggerSerialUnitSerializer());
         return SerialIO(serializers = serializers);

@@ -1,6 +1,6 @@
 package com.dnillg.balancer.controlapp.serial.serialization
 
-import com.dnillg.balancer.controlapp.serial.model.PIDType
+import com.dnillg.balancer.controlapp.domain.model.PIDType
 import com.dnillg.balancer.controlapp.serial.model.SerialUnit
 import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
 

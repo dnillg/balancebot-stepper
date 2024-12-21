@@ -1,4 +1,4 @@
-package com.dnillg.balancer.controlapp.chart
+package com.dnillg.balancer.controlapp.domain.chart
 
 import com.dnillg.balancer.controlapp.timeseries.TimeSeriesConfig
 import com.dnillg.balancer.controlapp.timeseries.TimeSeriesEntry
