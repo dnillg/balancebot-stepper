@@ -15,13 +15,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -69,21 +72,67 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.dnillg.balancer.controlapp.chart.TimeSeriesType
 import com.dnillg.balancer.controlapp.chart.chartConfigurations
 import com.dnillg.balancer.controlapp.components.Joystick
 import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.PIDType
+import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
+import kotlin.math.abs
 
 data class MainActivityAsyncJobs(
   var chartRenderer: Job? = null,
   var sinGenerator: Job? = null,
 )
+
+data class PIDValues(
+  val pidType: PIDType? = null,
+  val p: Float = 0.0f,
+  val i: Float = 0.0f,
+  val d: Float = 0.0f,
+) {
+  fun incP(prop: Float) = this.copy(p = calcNewValue(this.p, prop))
+  fun incI(prop: Float) = this.copy(i = calcNewValue(this.i, prop))
+  fun incD(prop: Float) = this.copy(d = calcNewValue(this.d, prop))
+
+  private fun calcNewValue(prevValue: Float, absProp: Float): Float {
+    var prop = absProp;
+    if (prevValue < 0f) {
+      prop = -absProp
+    }
+    val newValue = prevValue * (1.0f + absProp)
+    if (abs(newValue) < 0.001f && newValue > 0f && prop < 0.0f) {
+      return 0f
+    }
+    if (abs(newValue) < 0.001f && newValue < 0f && prop > 0.0f) {
+      return 0f
+    }
+
+    if (abs(newValue) < 0.001f && prop < 0f) {
+      return -0.001f
+    }
+    if (abs(newValue) < 0.001f && prop > 0f) {
+      return 0.001f
+    }
+
+    return newValue
+  }
+
+  fun initialized(): Boolean {
+    return p != 0.0f || i != 0.0f || d != 0.0f
+  }
+}
 
 class MainActivity @Inject constructor() : ComponentActivity() {
 
@@ -182,13 +231,142 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   }
 
   @Composable
+  fun LargeButton(
+    text: String,
+    buttonColor: Color,
+    textColor: Color,
+    onClick: () -> Unit
+  ) {
+    Button(
+      onClick = onClick,
+      colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+      shape = RoundedCornerShape(8.dp),
+      modifier = Modifier
+        .height(48.dp)
+    ) {
+      Text(
+        text = text,
+        fontSize = 16.sp,
+        color = textColor,
+        fontWeight = FontWeight.Bold
+      )
+    }
+  }
+
+  @Composable
+  fun PidAdjustButton(
+    text: String,
+    buttonColor: Color,
+    textColor: Color,
+    onClick: () -> Unit,
+    enabled: Boolean = true
+  ) {
+    Button(
+      onClick = onClick,
+      colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+      shape = RoundedCornerShape(8.dp),
+      contentPadding = PaddingValues(0.dp),
+      modifier = Modifier
+        .clickable(enabled = enabled, onClick = onClick)
+        .height(36.dp)
+    ) {
+      Text(
+        text = text,
+        fontSize = 28.sp,
+        color = textColor,
+        fontWeight = FontWeight.Bold
+      )
+    }
+  }
+
+  @Composable
   private fun PidPage() {
     Column(
       modifier = Modifier.fillMaxSize(),
       verticalArrangement = Arrangement.spacedBy(16.dp),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
-      Text("PID Page")
+      val pidValues = remember { mutableStateOf(PIDValues()) }
+      val setPidAction = {
+        serialWorker?.enqueue(SetPIDSerialUnit(
+          pidValues.value.pidType!!,
+          pidValues.value.p,
+          pidValues.value.i,
+          pidValues.value.d
+        )) }
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+      ) {
+        LargeButton("Roll", Color.DarkGray, Color.White, {pidValues.value = PIDValues(PIDType.ROLL)})
+        LargeButton("Speed", Color.DarkGray, Color.White, {
+          pidValues.value = PIDValues(PIDType.SPEED)
+          serialWorker?.enqueue(GetPidSerialUnit(PIDType.SPEED))
+        })
+      }
+      PidValueRow(pidValues, {pv -> pv.p}, {inc ->
+        pidValues.value = pidValues.value.incP(inc)
+        setPidAction.invoke()
+      })
+      PidValueRow(pidValues, {pv -> pv.i}, {inc ->
+        pidValues.value = pidValues.value.incI(inc)
+        setPidAction.invoke()
+      })
+      PidValueRow(pidValues, {pv -> pv.d}, {inc ->
+        pidValues.value = pidValues.value.incD(inc)
+        setPidAction.invoke()
+      })
+    }
+  }
+
+  @Composable
+  private fun PidValueRow(pidValues: MutableState<PIDValues>, valueExt: (PIDValues)->Float, incFunc: (Float)->Unit) {
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      val enabled = pidValues.value.pidType != null
+      val bgColor = if (enabled) Color.LightGray else Color.Gray
+      PidAdjustButton("--", bgColor, Color.Black, {
+        incFunc.invoke(-0.1f)
+      }, enabled = enabled)
+      PidAdjustButton("-", bgColor, Color.Black, {
+        incFunc.invoke(-0.01f)
+      }, enabled = enabled)
+      FloatingPointBox(number = valueExt.invoke(pidValues.value))
+      PidAdjustButton("+", bgColor, Color.Black, {
+        incFunc.invoke(0.01f)
+      }, enabled = enabled)
+      PidAdjustButton("++", bgColor, Color.Black, {
+        incFunc.invoke(0.1f)
+      }, enabled = enabled)
+    }
+  }
+
+  @Composable
+  fun FloatingPointBox(number: Float) {
+    val formattedNumber = String.format("%.4f", number)
+    PidBox(modifier = Modifier.width(280.dp), text = formattedNumber)
+  }
+
+  @Composable
+  private fun PidBox(modifier: Modifier = Modifier, text: String) {
+    Box(
+      modifier = modifier
+        .background(
+          color = Color.LightGray,
+          shape = RoundedCornerShape(8.dp)
+        ) // Rounded background
+        .padding(6.dp),
+      contentAlignment = Alignment.Center // Center the content inside the box
+    ) {
+      Text(
+        text = text,
+        fontSize = 24.sp, // 32pt font size
+        color = Color.Black, // White text color
+        fontWeight = FontWeight.Bold, // Bold font weight
+        textAlign = TextAlign.Center // Center align the text
+      )
     }
   }
 
