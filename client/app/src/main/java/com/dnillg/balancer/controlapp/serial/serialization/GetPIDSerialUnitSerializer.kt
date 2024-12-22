@@ -16,8 +16,8 @@ class GetPIDSerialUnitSerializer : SerialUnitSerializer<GetPIDSerialUnit> {
     }
 
     override fun serialize(unit: SerialUnit): String {
-        unit as SetPIDSerialUnit
-        return "{unit.type}"
+        unit as GetPIDSerialUnit
+        return unit.type.name
     }
 
     override fun deserialize(line: String): GetPIDSerialUnit {

@@ -84,6 +84,7 @@ fun SimpleButton(
     modifier = Modifier
       .background(Color.LightGray, shape = CircleShape)
       .size(42.dp)
+      .padding(4.dp)
   ) {
     Icon(
       imageVector = imageVector,

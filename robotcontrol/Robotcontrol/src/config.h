@@ -26,6 +26,14 @@
 #define MOTOR_MAX_ACCELERATION 10000
 
 // ----------------------------------------------------------------------------
+// IO Serial Config
+// ----------------------------------------------------------------------------
+
+#define IO_SERIAL_BAUD 921600
+#define IO_SERIAL_PORT 2
+#define IO_SERIAL_ENABLED true
+
+// ----------------------------------------------------------------------------
 // IMU Config
 // ----------------------------------------------------------------------------
 
@@ -70,7 +78,7 @@
 // ----------------------------------------------------------------------------
 
 #define PIN_TMC5160_LEFT_DIR 22
-#define PIN_TMC5160_LEFT_STP 25 // 25
+#define PIN_TMC5160_LEFT_STP 25
 #define PIN_TMC5160_LEFT_CLK -1
 #define PIN_TMC5160_LEFT_MISO 19
 #define PIN_TMC5160_LEFT_CS 21
@@ -79,13 +87,13 @@
 #define PIN_TMC5160_LEFT_EN 32
 
 #define PIN_TMC5160_RIGHT_DIR 4
-#define PIN_TMC5160_RIGHT_STP 26 // old: 16
+#define PIN_TMC5160_RIGHT_STP 26
 #define PIN_TMC5160_RIGHT_CLK -1
 #define PIN_TMC5160_RIGHT_MISO 19
 #define PIN_TMC5160_RIGHT_CS 5
 #define PIN_TMC5160_RIGHT_SCK 18
 #define PIN_TMC5160_RIGHT_MOSI 23
-#define PIN_TMC5160_RIGHT_EN 33 // old: 26
+#define PIN_TMC5160_RIGHT_EN 33
 
 #define PIN_BNO085_SCL 14
 #define PIN_BNO085_SDA 13
@@ -93,10 +101,10 @@
 #define PIN_BNO085_CS 15
 #define PIN_BNO085_INT 34
 #define PIN_BNO085_RST 27
-#define PIN_BNO085_PSI 2
-#define PIN_BNO085_PSO 12
+#define PIN_BNO085_PSO 2
+#define PIN_BNO085_PSI -1
 
 #define PIN_SERIAL_RX 17
-#define PIN_SERIAL_TX 16 // old: 25
+#define PIN_SERIAL_TX 16
 
 #endif /* CONFIG_H */

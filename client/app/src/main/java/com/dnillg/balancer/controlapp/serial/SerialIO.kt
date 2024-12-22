@@ -11,7 +11,7 @@ class SerialIO(
   fun send(serialUnit: SerialUnit) : String {
     for (serializer in serializers) {
       if (serializer.canSerialize(serialUnit)) {
-        return serializer.serialize(serialUnit)
+        return serializer.id() + ">" + serializer.serialize(serialUnit)
       }
     }
     throw IllegalArgumentException("No serializer found for $serialUnit")

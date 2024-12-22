@@ -17,9 +17,7 @@ float generateSineWave(float time, float frequency, float phase) {
 }
 
 void setup() {
-    // Initialize the serial connection for debugging (optional)
     Serial.begin(921600);
-    // Initialize the Bluetooth serial connection
     if (!SerialBT.begin(bluetoothDeviceName)) {
         Serial.println("Failed to initialize Bluetooth!" );
         while (true) {} // Stop execution if Bluetooth doesn't start
@@ -35,21 +33,23 @@ void loop() {
         lastPrintTime = currentTime;
         float timeInSeconds = currentTime / 1000.0;
 
-        float currentRoll     = generateSineWave(timeInSeconds, 0.5, 0) * 30 + 90;
-        float targetRoll      = generateSineWave(timeInSeconds, 0.5, PI / 4) * 20 + 90;
+        float currentRoll     = generateSineWave(timeInSeconds, 0.5, 0) * 30;
+        float targetRoll      = generateSineWave(timeInSeconds, 0.5, PI / 4) * 20;
         float currentSpeed    = generateSineWave(timeInSeconds, 0.2, PI / 2) * 10000;
         float targetSpeed     = generateSineWave(timeInSeconds, 0.2, PI / 3) * 10000;
-        float steerInput      = generateSineWave(timeInSeconds, 0.3, PI / 6) * 100;
         float motorLeftOutput = generateSineWave(timeInSeconds, 0.4, PI / 5) * 10000;
-        float motorRightOutput= generateSineWave(timeInSeconds, 0.4, PI / 7) * 10000;
+        float motorRightOutput= generateSineWave(timeInSeconds, 0.45, PI / 7) * 10000;
+        float steerInput      = generateSineWave(timeInSeconds, 0.3, PI / 6) * 1;
+        float speedInput      = generateSineWave(timeInSeconds, 0.6, PI / 6) * 1;
         
         String metrics = "DIAG>" + String(currentRoll, 3) + "," +
                          String(targetRoll, 3) + "," +
                          String(currentSpeed, 3) + "," +
                          String(targetSpeed, 3) + "," +
-                         String(steerInput, 3) + "," +
                          String(motorLeftOutput, 3) + "," +
-                         String(motorRightOutput, 3);
+                         String(motorRightOutput, 3) + "," +
+                         String(steerInput, 3) + "," +
+                         String(speedInput, 3);
 
         //Serial.println(metrics);
         SerialBT.println(metrics);

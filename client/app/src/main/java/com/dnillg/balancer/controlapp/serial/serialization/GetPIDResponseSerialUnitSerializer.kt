@@ -4,10 +4,10 @@ import com.dnillg.balancer.controlapp.domain.model.PIDType
 import com.dnillg.balancer.controlapp.serial.model.SerialUnit
 import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
 
-class SetPIDSerialUnitSerializer : SerialUnitSerializer<SetPIDSerialUnit> {
+class GetPIDResponseSerialUnitSerializer : SerialUnitSerializer<SetPIDSerialUnit> {
 
     override fun id(): String {
-        return "SETPID"
+        return "GETPIDRSP"
     }
 
     override fun unitClass(): Class<SetPIDSerialUnit> {
@@ -16,7 +16,7 @@ class SetPIDSerialUnitSerializer : SerialUnitSerializer<SetPIDSerialUnit> {
 
     override fun serialize(unit: SerialUnit): String {
         unit as SetPIDSerialUnit
-        return "${unit.type},${shortFloat(unit.p)},${shortFloat(unit.i)},${shortFloat(unit.d)}"
+        return "${unit.type.name},${shortFloat(unit.p)},${shortFloat(unit.i)},${shortFloat(unit.d)}"
     }
 
     override fun deserialize(line: String): SetPIDSerialUnit {

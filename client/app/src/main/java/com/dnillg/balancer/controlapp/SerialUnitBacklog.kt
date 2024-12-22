@@ -1,5 +1,6 @@
 package com.dnillg.balancer.controlapp
 
+import android.util.Log
 import com.dnillg.balancer.controlapp.serial.model.SerialUnit
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -11,6 +12,10 @@ class ConcurrentSerialUnitBacklog <T : SerialUnit> (
 
   suspend fun add(item: T) {
     mutex.withLock {
+      while (items.size > 500) {
+        items.removeAt(0)
+        Log.i("ConcurrentSerialUnitBacklog", "Buffer is full, removing oldest item")
+      }
       items.add(item)
     }
   }

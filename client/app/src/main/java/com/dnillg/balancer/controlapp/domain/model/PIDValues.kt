@@ -1,5 +1,6 @@
 package com.dnillg.balancer.controlapp.domain.model
 
+import com.dnillg.balancer.controlapp.serial.model.SerialUnit
 import kotlin.math.abs
 
 data class PIDValues(
@@ -36,6 +37,7 @@ data class PIDValues(
   }
 
   fun initialized(): Boolean {
-    return p != 0.0f || i != 0.0f || d != 0.0f
+    return (p != 0.0f || i != 0.0f || d != 0.0f) && pidType != null
   }
+
 }

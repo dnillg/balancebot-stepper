@@ -53,7 +53,7 @@ inline fun Joystick(
               )
             }
             val xPercent = thumbPosition.x / baseRadiusPx
-            val yPercent = thumbPosition.y / baseRadiusPx
+            val yPercent = -(thumbPosition.y / baseRadiusPx)
             onMove(xPercent, yPercent)
           },
           onDragEnd = {

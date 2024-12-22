@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <BluetoothSerial.h>
+#include <HardwareSerial.h>
 #include <TMC5160.h>
 #include <TMCStepper.h>
 #include <AccelStepper.h>
@@ -46,6 +47,7 @@ MotorPins createMotorRightPins();
 struct GlobalState
 {
   boolean initialized = false;
+  HardwareSerial ioSerial = HardwareSerial(2);
   FailSafe failSafe;
   BluetoothSerial SerialBT;
   Control control;
@@ -60,7 +62,7 @@ struct GlobalState
   StationaryCutoff stationaryCutoff = StationaryCutoff(20, 20, STATIONARY_CUTOFF_ROLL_RANGE, STATIONARY_CUTOFF_SPEED_RANGE);
 };
 
-GlobalState gstate ;
+GlobalState gstate;
 
 // ----------------------------------------------------------------------------
 // Mutex
@@ -153,6 +155,10 @@ void setup()
   Serial.println("ControlTask started.");
   #endif
 
+  #if IO_SERIAL_ENABLED == true
+  gstate.ioSerial.begin(IO_SERIAL_BAUD);
+  #endif
+
   gstate.leftMotor.enable();
   gstate.rightMotor.enable();
   gstate.initialized = true;
@@ -207,18 +213,19 @@ void controlTask(void *pvParameters)
 
       int16_t step16SpeedLeft = gstate.control.getSteps16Left();
       int16_t step16SpeedRight = gstate.control.getSteps16Right();
+      String output = "Roll: " + String(currentRoll, 4) + 
+                ", Speed: " + String(gstate.speedAgg500.getSpeed()) + 
+                ", Setpoint: " + String(gstate.control.getRollSetpoint(), 4) + 
+                ", Left: " + String(step16SpeedLeft) + 
+                ", Right: " + String(step16SpeedRight);
       #if PRINT_CONTROL_STATE == true 
       if (gstate.control.getCycleNo() % 40 == 0) {
-        Serial.print("Roll: ");
-        Serial.print(currentRoll, 4);
-        Serial.print(", Speed: ");
-        Serial.print(gstate.speedAgg500.getSpeed());
-        Serial.print(", Setpoint: ");
-        Serial.print(gstate.control.getRollSetpoint(), 4);
-        Serial.print(", Left: ");
-        Serial.print(step16SpeedLeft);
-        Serial.print(", Right: ");
-        Serial.println(step16SpeedRight);
+        Serial.println(output);
+      }
+      #endif
+      #if IO_SERIAL_ENABLED == true
+      if (gstate.control.getCycleNo()% 10 == 0) {
+        gstate.ioSerial.println("ALIVE>");
       }
       #endif
       gstate.leftMotor.setSpeed(gstate.stationaryCutoff.filter(step16SpeedLeft)); 

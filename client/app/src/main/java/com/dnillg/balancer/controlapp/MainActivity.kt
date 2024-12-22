@@ -62,6 +62,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dnillg.balancer.controlapp.bluetooth.BtConnection
+import com.dnillg.balancer.controlapp.components.ConnectionBar
 import com.dnillg.balancer.controlapp.components.FloatingPointBox
 import com.dnillg.balancer.controlapp.components.Joystick
 import com.dnillg.balancer.controlapp.components.LargeButton
@@ -70,12 +71,14 @@ import com.dnillg.balancer.controlapp.domain.chart.SinusGenerator
 import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesChartEntry
 import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesType
 import com.dnillg.balancer.controlapp.domain.chart.chartConfigurations
+import com.dnillg.balancer.controlapp.domain.model.ConnectionStatus
 import com.dnillg.balancer.controlapp.domain.model.PIDType
 import com.dnillg.balancer.controlapp.domain.model.PIDValues
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.DiagDataSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.GetPIDResponseSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.MotorToggleSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
@@ -113,6 +116,8 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   private val sinusGenerators: MutableMap<String, SinusGenerator> = HashMap()
 
   private lateinit var lineChart: LineChart;
+  private lateinit var connectionStatus: MutableState<ConnectionStatus>;
+  private lateinit var pidValues: MutableState<PIDValues>;
   private var serialWorker: SerialWorker? = null
   private var btConnection: BtConnection? = null
   private var chartConfigIndex = 0;
@@ -168,10 +173,10 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       }
       Column(
         modifier = Modifier
-          .width(220.dp)
+          .width(200.dp)
           .padding(8.dp)
           .fillMaxHeight(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
         SidebarContent(pageIndex)
@@ -196,10 +201,11 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       contentPadding = PaddingValues(0.dp),
       modifier = Modifier
         .height(36.dp)
+        .width(36.dp)
     ) {
       Text(
         text = text,
-        fontSize = 28.sp,
+        fontSize = 24.sp,
         color = textColor,
         fontWeight = FontWeight.Bold
       )
@@ -209,11 +215,11 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   @Composable
   private fun PidPage() {
     Column(
-      modifier = Modifier.fillMaxSize(),
+      modifier = Modifier.fillMaxSize().padding(8.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
-      val pidValues = remember { mutableStateOf(PIDValues()) }
+      pidValues = remember { mutableStateOf(PIDValues()) }
       val setPidAction = {
         serialWorker?.enqueue(SetPIDSerialUnit(
           pidValues.value.pidType!!,
@@ -233,10 +239,11 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         val speedButtonColor =
           if (pidValues.value.pidType == PIDType.SPEED) Color.Red else Color.DarkGray
         LargeButton("Speed", speedButtonColor, Color.White, {
-          //pidValues.value = PIDValues(PIDType.SPEED)
+          pidValues.value = PIDValues(PIDType.SPEED)
           serialWorker?.enqueue(GetPIDSerialUnit(PIDType.SPEED))
         })
       }
+
       PidValueRow(pidValues, {pv -> pv.p}, {inc ->
         pidValues.value = pidValues.value.incP(inc)
         setPidAction.invoke()
@@ -258,7 +265,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      val enabled = pidValues.value.pidType != null
+      val enabled = pidValues.value.initialized();
       PidAdjustButton("--", Color.Black, {
         incFunc.invoke(-0.1f)
       }, enabled = enabled)
@@ -280,19 +287,25 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     page : MutableState<Int>
   ) {
     val showDialog = remember { mutableStateOf(false) }
+    connectionStatus = remember { mutableStateOf(ConnectionStatus()) }
+
     if (showDialog.value) {
       FullScreenDialogExample({ showDialog.value = false })
     }
+
+    ConnectionBar(connectionStatus)
 
     SidebarRow {
       SimpleButton({
         connectBluetooth()
         createAndStartSerialWorker()
+        connectionStatus.value = ConnectionStatus().toConnected()
+        startChartRenderer()
       }, Icons.Default.Call)
       SimpleButton({
-        btConnection?.close()
-        serialWorker?.stop()
         stopChartRendererRoutine()
+        serialWorker?.stop()
+        btConnection?.close()
       }, Icons.Default.Close)
       SimpleButton({ stepChartConfig(-1) }, Icons.Default.ArrowBack)
       SimpleButton({ stepChartConfig(1)}, Icons.Default.ArrowForward)
@@ -318,8 +331,9 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     //TODO: Remove
     SidebarRow {
       SimpleButton({
-            startChartRenderer()
-            startSinGenerator()
+        startChartRenderer()
+        startSinGenerator()
+        connectionStatus.value = ConnectionStatus().toConnected()
       }, Icons.Default.PlayArrow)
     }
 
@@ -335,30 +349,11 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   @Composable
   private fun SidebarRow(content: @Composable RowScope.() -> Unit) {
     Row(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.fillMaxWidth().padding(0.dp),
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      horizontalArrangement = Arrangement.SpaceAround,
       content = content
     )
-  }
-
-  private fun startSinGenerator() {
-    asyncJobs.sinGenerator = CoroutineScope(Dispatchers.Default).launch {
-      while (true) {
-        val v = sinusGenerators["2"]!!.next()
-        chartDataBacklog.add(
-          DiagDataSerialUnit(
-            v * 150f,
-            v * 180f,
-            v * 8000f,
-            v * 9000f,
-            v * 4000f,
-            v * 6000f
-          )
-        )
-        delay(5);
-      }
-    }
   }
 
   private fun startChartRenderer() {
@@ -444,10 +439,12 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     serialWorker!!.subscribe(DiagDataSerialUnit::class.java) {
       CoroutineScope(Dispatchers.Default).launch {
         chartDataBacklog.add(it as DiagDataSerialUnit)
+        Log.i(this::class.simpleName, "Added to backlog")
       }
     }
-    serialWorker!!.subscribe(GetPIDSerialUnit::class.java) {
-
+    serialWorker!!.subscribe(GetPIDResponseSerialUnit::class.java) {
+      it as GetPIDResponseSerialUnit
+      pidValues.value = PIDValues(it.type, it.p, it.i, it.d)
     }
     serialWorker!!.run();
   }
@@ -512,15 +509,13 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   }
 
   private fun closeBluetoothConnection() {
-    serialWorker!!.stop();
-    if (btConnection != null) {
-      try {
-        btConnection!!.close();
-      } catch (e: Throwable) {
-        Log.e(this::class.simpleName, "Could not close BT connection", e)
-      }
-      btConnection = null;
+    serialWorker?.stop();
+    try {
+      btConnection?.close();
+    } catch (e: Throwable) {
+      Log.e(this::class.simpleName, "Could not close BT connection", e)
     }
+    btConnection = null;
   }
 
   private fun hasBluetoothPermissions(): Boolean {
@@ -538,6 +533,25 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       ),
       BLUETOOTH_PERMISSION_REQUEST_CODE
     )
+  }
+
+  private fun startSinGenerator() {
+    asyncJobs.sinGenerator = CoroutineScope(Dispatchers.Default).launch {
+      while (true) {
+        val v = sinusGenerators["2"]!!.next()
+        chartDataBacklog.add(
+          DiagDataSerialUnit(
+            v * 150f,
+            v * 180f,
+            v * 8000f,
+            v * 9000f,
+            v * 4000f,
+            v * 6000f
+          )
+        )
+        delay(5);
+      }
+    }
   }
 
   companion object {

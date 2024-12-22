@@ -6,7 +6,7 @@ import com.dnillg.balancer.controlapp.serial.model.SerialUnit
 class ControlSerialUnitSerializer : SerialUnitSerializer<ControlSerialUnit> {
 
     override fun id(): String {
-        return "control"
+        return "CTRL"
     }
 
     override fun unitClass(): Class<ControlSerialUnit> {
