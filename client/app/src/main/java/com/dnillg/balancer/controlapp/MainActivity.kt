@@ -8,28 +8,25 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -37,27 +34,52 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dnillg.balancer.controlapp.bluetooth.BtConnection
-import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesChartEntry
-import com.dnillg.balancer.controlapp.timeseries.TimeSeriesWindow
+import com.dnillg.balancer.controlapp.components.FloatingPointBox
+import com.dnillg.balancer.controlapp.components.Joystick
+import com.dnillg.balancer.controlapp.components.LargeButton
+import com.dnillg.balancer.controlapp.components.SimpleButton
 import com.dnillg.balancer.controlapp.domain.chart.SinusGenerator
+import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesChartEntry
+import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesType
+import com.dnillg.balancer.controlapp.domain.chart.chartConfigurations
+import com.dnillg.balancer.controlapp.domain.model.PIDType
+import com.dnillg.balancer.controlapp.domain.model.PIDValues
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
+import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.DiagDataSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.GetPIDSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.MotorToggleSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
+import com.dnillg.balancer.controlapp.timeseries.TimeSeriesWindow
 import com.dnillg.balancer.controlapp.ui.theme.ControlAppTheme
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.Legend
@@ -70,27 +92,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesType
-import com.dnillg.balancer.controlapp.domain.chart.chartConfigurations
-import com.dnillg.balancer.controlapp.components.Joystick
-import com.dnillg.balancer.controlapp.domain.model.PIDType
-import com.dnillg.balancer.controlapp.domain.model.PIDValues
-import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
-import com.dnillg.balancer.controlapp.serial.model.GetPIDSerialUnit
-import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
 
 data class MainActivityAsyncJobs(
   var chartRenderer: Job? = null,
@@ -138,31 +139,15 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             .background(Color.Black)
             .systemBarsPadding()
         ) {
-          StandardLayout()
+          LandscapeLayout()
         }
       }
     }
   }
 
   @Composable
-  @Preview(showBackground = true)
-  fun StandardLayout() {
-    val configuration = LocalConfiguration.current
-    when (configuration.orientation) {
-      Configuration.ORIENTATION_LANDSCAPE -> {
-        LandscapeLayout()
-      }
-    }
-  }
-
-  @Composable
   fun LandscapeLayout() {
-    var pageIndex = remember { mutableStateOf(0) }
-    var showDialog = remember { mutableStateOf(false) }
-
-    if (showDialog.value) {
-      FullScreenDialogExample({ showDialog.value = false })
-    }
+    val pageIndex = remember { mutableIntStateOf(0) }
 
     Row(
       modifier = Modifier
@@ -176,61 +161,40 @@ class MainActivity @Inject constructor() : ComponentActivity() {
           .weight(1f)
           .fillMaxHeight(1.0f)
       ) {
-        when (pageIndex.value) {
+        when (pageIndex.intValue) {
           0 -> StyledLineChart()
           1 -> PidPage()
         }
       }
       Column(
         modifier = Modifier
-          .width(240.dp)
+          .width(220.dp)
+          .padding(8.dp)
           .fillMaxHeight(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
-        SidebarContent({showDialog.value = true}, pageIndex)
+        SidebarContent(pageIndex)
       }
-    }
-  }
-
-  @Composable
-  fun LargeButton(
-    text: String,
-    buttonColor: Color,
-    textColor: Color,
-    onClick: () -> Unit
-  ) {
-    Button(
-      onClick = onClick,
-      colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-      shape = RoundedCornerShape(8.dp),
-      modifier = Modifier
-        .height(48.dp)
-    ) {
-      Text(
-        text = text,
-        fontSize = 16.sp,
-        color = textColor,
-        fontWeight = FontWeight.Bold
-      )
     }
   }
 
   @Composable
   fun PidAdjustButton(
     text: String,
-    buttonColor: Color,
     textColor: Color,
     onClick: () -> Unit,
     enabled: Boolean = true
   ) {
+    val bgColor = if (enabled) Color.LightGray else Color.Gray
+    val effectiveOnClick : () -> Unit = if (enabled) onClick else {->Log.d(this::class.simpleName, "Disabled")}
+
     Button(
-      onClick = onClick,
-      colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+      onClick = effectiveOnClick,
+      colors = ButtonDefaults.buttonColors(containerColor = bgColor),
       shape = RoundedCornerShape(8.dp),
       contentPadding = PaddingValues(0.dp),
       modifier = Modifier
-        .clickable(enabled = enabled, onClick = onClick)
         .height(36.dp)
     ) {
       Text(
@@ -261,9 +225,15 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
       ) {
-        LargeButton("Roll", Color.DarkGray, Color.White, {pidValues.value = PIDValues(PIDType.ROLL)})
-        LargeButton("Speed", Color.DarkGray, Color.White, {
-          pidValues.value = PIDValues(PIDType.SPEED)
+        val rollButtonColor = if (pidValues.value.pidType == PIDType.ROLL) Color.Red else Color.DarkGray
+        LargeButton("Roll", rollButtonColor, Color.White, {
+          pidValues.value = PIDValues(PIDType.ROLL)
+          serialWorker?.enqueue(GetPIDSerialUnit(PIDType.ROLL))
+        })
+        val speedButtonColor =
+          if (pidValues.value.pidType == PIDType.SPEED) Color.Red else Color.DarkGray
+        LargeButton("Speed", speedButtonColor, Color.White, {
+          //pidValues.value = PIDValues(PIDType.SPEED)
           serialWorker?.enqueue(GetPIDSerialUnit(PIDType.SPEED))
         })
       }
@@ -289,80 +259,50 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       val enabled = pidValues.value.pidType != null
-      val bgColor = if (enabled) Color.LightGray else Color.Gray
-      PidAdjustButton("--", bgColor, Color.Black, {
+      PidAdjustButton("--", Color.Black, {
         incFunc.invoke(-0.1f)
       }, enabled = enabled)
-      PidAdjustButton("-", bgColor, Color.Black, {
+      PidAdjustButton("-", Color.Black, {
         incFunc.invoke(-0.01f)
       }, enabled = enabled)
       FloatingPointBox(number = valueExt.invoke(pidValues.value))
-      PidAdjustButton("+", bgColor, Color.Black, {
+      PidAdjustButton("+", Color.Black, {
         incFunc.invoke(0.01f)
       }, enabled = enabled)
-      PidAdjustButton("++", bgColor, Color.Black, {
+      PidAdjustButton("++", Color.Black, {
         incFunc.invoke(0.1f)
       }, enabled = enabled)
     }
   }
 
   @Composable
-  fun FloatingPointBox(number: Float) {
-    val formattedNumber = String.format("%.4f", number)
-    PidBox(modifier = Modifier.width(280.dp), text = formattedNumber)
-  }
-
-  @Composable
-  private fun PidBox(modifier: Modifier = Modifier, text: String) {
-    Box(
-      modifier = modifier
-        .background(
-          color = Color.LightGray,
-          shape = RoundedCornerShape(8.dp)
-        ) // Rounded background
-        .padding(6.dp),
-      contentAlignment = Alignment.Center // Center the content inside the box
-    ) {
-      Text(
-        text = text,
-        fontSize = 24.sp, // 32pt font size
-        color = Color.Black, // White text color
-        fontWeight = FontWeight.Bold, // Bold font weight
-        textAlign = TextAlign.Center // Center align the text
-      )
-    }
-  }
-
-  @Composable
   private fun SidebarContent(
-    openTriggerBoard: () -> Unit,
     page : MutableState<Int>
   ) {
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-      SimpleButton({ openTriggerBoard.invoke() }, Icons.Default.Call)
+    val showDialog = remember { mutableStateOf(false) }
+    if (showDialog.value) {
+      FullScreenDialogExample({ showDialog.value = false })
+    }
+
+    SidebarRow {
       SimpleButton({
-        stopSinGeneratorRoutine()
+        connectBluetooth()
+        createAndStartSerialWorker()
+      }, Icons.Default.Call)
+      SimpleButton({
+        btConnection?.close()
+        serialWorker?.stop()
         stopChartRendererRoutine()
       }, Icons.Default.Close)
       SimpleButton({ stepChartConfig(-1) }, Icons.Default.ArrowBack)
       SimpleButton({ stepChartConfig(1)}, Icons.Default.ArrowForward)
     }
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+
+    SidebarRow {
       SimpleButton(
         onClick = {
-          CoroutineScope(Dispatchers.Main).launch {
-            startChartRenderer()
-            startSinGenerator()
-          }
-        }, imageVector = HornSpeakerWithHandleSvgrepoCom
+          serialWorker?.enqueue(MotorToggleSerialUnit())
+        }, imageVector = Icons.Filled.Lock
       )
       SimpleButton(onClick = {
         page.value = 1;
@@ -371,17 +311,35 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         page.value = 0;
       }, Icons.Filled.Home)
       SimpleButton({
-        CoroutineScope(Dispatchers.Main).launch {
-          openTriggerBoard()
-        }
+        showDialog.value = true
       }, Icons.Default.MoreVert)
     }
+
+    //TODO: Remove
+    SidebarRow {
+      SimpleButton({
+            startChartRenderer()
+            startSinGenerator()
+      }, Icons.Default.PlayArrow)
+    }
+
+
     Box(modifier = Modifier.fillMaxHeight()) {
       Joystick(modifier = Modifier.align(Alignment.Center), onMove = { x, y ->
         serialWorker?.enqueueAndRemoveOthers(ControlSerialUnit(x, y))
         Log.i(this::class.simpleName, "Joystick: $x, $y")
       })
     }
+  }
+
+  @Composable
+  private fun SidebarRow(content: @Composable RowScope.() -> Unit) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      content = content
+    )
   }
 
   private fun startSinGenerator() {
@@ -438,10 +396,11 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
           ) {
-            SimpleButton({ onDismiss() }, Icons.Default.Close)
-            SimpleButton({ onDismiss() }, Icons.Default.Close)
-            SimpleButton({ onDismiss() }, Icons.Default.Close)
-            SimpleButton({ onDismiss() }, Icons.Default.Close)
+            SimpleButton({ onDismiss() }, Icons.Default.Notifications)
+            SimpleButton({ onDismiss() }, Icons.Default.Face)
+            SimpleButton({ onDismiss() }, Icons.Default.Face)
+            SimpleButton({ onDismiss() }, Icons.Default.Favorite)
+            SimpleButton({ onDismiss() }, HornSpeakerWithHandleSvgrepoCom)
           }
 
         }
@@ -476,33 +435,19 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     lineChart.invalidate()
   }
 
-  @Composable
-  private fun SimpleButton(
-    onClick: () -> Unit,
-    imageVector: ImageVector
-  ) {
-    IconButton(
-      onClick = onClick,
-      modifier = Modifier
-        .background(Color.LightGray, shape = CircleShape)
-        .size(42.dp)
-    ) {
-      Icon(
-        imageVector = imageVector,
-        contentDescription = "Button",
-        modifier = Modifier.size(32.dp)
-      )
-    }
-  }
-
   private fun createAndStartSerialWorker() {
     if (btConnection == null) {
       return;
     }
-    serialWorker?.stop();
+    serialWorker?.stop()
     serialWorker = serialWorkerFactory.create(btConnection!!)
     serialWorker!!.subscribe(DiagDataSerialUnit::class.java) {
-      Log.i(this::class.simpleName, "Received: $it")
+      CoroutineScope(Dispatchers.Default).launch {
+        chartDataBacklog.add(it as DiagDataSerialUnit)
+      }
+    }
+    serialWorker!!.subscribe(GetPIDSerialUnit::class.java) {
+
     }
     serialWorker!!.run();
   }
@@ -518,7 +463,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     )
   }
 
-  //@Composable
   private fun diagChart(context: Context): LineChart {
     return LineChart(context).apply {
       setBackgroundColor(Color.Black.toArgb())

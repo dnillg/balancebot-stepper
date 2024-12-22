@@ -5,6 +5,7 @@ import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.serialization.ControlSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.DiagDataSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.GetPIDSerialUnitSerializer
+import com.dnillg.balancer.controlapp.serial.serialization.MotorToggleSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.SerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.SetPIDSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.TriggerSerialUnitSerializer
@@ -22,6 +23,7 @@ class MainModule {
         serializers.add(GetPIDSerialUnitSerializer());
         serializers.add(ControlSerialUnitSerializer());
         serializers.add(TriggerSerialUnitSerializer());
+        serializers.add(MotorToggleSerialUnitSerializer());
         return SerialIO(serializers = serializers);
     }
 
