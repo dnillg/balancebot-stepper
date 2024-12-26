@@ -1,6 +1,10 @@
 #ifndef CONFIG_H // include guard
 #define CONFIG_H
 
+#define DISPLAY_WIDTH  240
+#define DISPLAY_HEIGHT 240
+#define BUFFER_SIZE 256
+
 // ----------------------------------------------------------------------------
 // Bluetooth
 // ----------------------------------------------------------------------------
@@ -25,13 +29,13 @@
 #define PIN_DISPLAY_CS 5
 #define PIN_DISPLAY_RST 4
 
-#define PIN_MP3_SERIAL_RX 19
-#define PIN_MP3_SERIAL_TX 22
+#define PIN_MP3_SERIAL_RX 22
+#define PIN_MP3_SERIAL_TX 19
 
 #define PIN_CARD_CS 21
 #define PIN_CARD_MOSI 13
 #define PIN_CARD_SCK 14
-#define PIN_CARD_MISO 12
+#define PIN_CARD_MISO 25
 
 
 #define PIN_SERIAL_RX 17

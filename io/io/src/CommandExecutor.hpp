@@ -19,6 +19,8 @@ public:
   {
     // TODO
   }
+private:
+  
 };
 
 #endif // COMMANDEXECUTOR_HPP_
