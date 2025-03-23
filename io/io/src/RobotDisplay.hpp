@@ -14,7 +14,7 @@ class RobotDisplay
 public:
   RobotDisplay(TFT_eSPI &tft);
   void playGif(const char *gifPath);
-  bool update();
+  bool run();
 
   static int gifSeek(GIFFILE *pFile, int iPosition);
   static void* gifOpen(const char *szFilename, int32_t *pFileSize);

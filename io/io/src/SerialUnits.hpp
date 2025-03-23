@@ -15,13 +15,14 @@ enum SerialUnitEndpoint
 enum SerialUnitAlias
 {
   UNKNOWN_SERIAL_UNIT,
-  DIAG,
-  CTRL,
-  GETPID,
-  GETPIDRSP,
-  SETPID,
-  MOTTOG,
-  TRIG
+  DIAG, // Periodic diagnostic message
+  CTRL, // Control message for acceleration and steering
+  GETPID, // Get PID values
+  GETPIDRSP, // Response to GETPID
+  SETPID, // Set PID values
+  MOTTOG, // Toggle motor power
+  TRIG, // Trigger an event
+  
 };
 
 class ISerialUnit

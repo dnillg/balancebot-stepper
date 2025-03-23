@@ -11,11 +11,11 @@ public:
   CommandExecutor() {
     // TODO
   }
-  void process(SerialUnitAlias alias, ISerialUnit &command)
+  void execute(SerialUnitAlias alias, ISerialUnit &command)
   {
     // TODO
   }
-  void execute()
+  void run()
   {
     // TODO
   }

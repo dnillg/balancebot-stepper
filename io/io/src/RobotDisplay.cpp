@@ -20,7 +20,7 @@ void RobotDisplay::playGif(const char *gifPath)
   }
 }
 
-bool RobotDisplay::update()
+bool RobotDisplay::run()
 {
   if (gif.playFrame(true, NULL) == 0)
   {

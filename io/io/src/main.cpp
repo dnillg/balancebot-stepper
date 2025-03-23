@@ -22,15 +22,13 @@
 void halt();
 
 // Tasks
-void readBluetoothSerial(void *pvParameters);
-void readControlSerial(void *pvParameters);
-void executorTask(void *pvParameters);
+void bluetoothSerialReaderTask(void *pvParameters);
+void controlSerialReaderTask(void *pvParameters);
+void runnerTask(void *pvParameters);
 
 // ----------------------------------------------------------------------------
 // Global Variables
 // ----------------------------------------------------------------------------
-
-constexpr EspSoftwareSerial::Config swSerialConfig = EspSoftwareSerial::SWSERIAL_8N1;
 
 typedef DFMiniMp3<EspSoftwareSerial::UART, DfMp3NoCallback> DfMp3;
 
@@ -40,7 +38,7 @@ struct GlobalState
   BluetoothSerial serialBT;
   SerialUnitRouter router;
   SerialUnitReader reader;
-  CommandExecutor executor;
+  CommandExecutor cmdExecutor;
   EspSoftwareSerial::UART mp3Serial;
   TFT_eSPI tft;
   RobotDisplay display;
@@ -53,7 +51,7 @@ struct GlobalState
         serialBT(),
         router(serialBT, controlSerial),
         reader(),
-        executor(),
+        cmdExecutor(),
         tft(TFT_eSPI(240, 240)),
         mp3Serial(PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX),
         display(tft),
@@ -77,21 +75,21 @@ void setup()
 {
   setCpuFrequencyMhz(160);
   delay(10);
+
   gstate.controlSerial.begin(CONTROL_SERIAL_BAUD);
-  Serial.begin(921600);
-  delay(100);
+  Serial.begin(SERIAL_BAUD);
   if (!gstate.serialBT.begin(BLUETOOTH_NAME))
   {
-    Serial.println("Failed to initialize Bluetooth!");
+    Serial.println("FATAL_ERROR: Failed to initialize Bluetooth!");
     halt();
   }
   Serial.println("Bluetooth device started, ready to pair with name: " + String(BLUETOOTH_NAME));
 
   SPISD.begin(PIN_CARD_SCK, PIN_CARD_MISO, PIN_CARD_MOSI, PIN_CARD_CS);
-  Serial.println("HSPI initialized");
+  Serial.println("HSPI (Card) initialized");
   if (!SD.begin(PIN_CARD_CS, SPISD, 4000000))
   {
-    Serial.println("SD card initialization failed!");
+    Serial.println("ERROR: SD card initialization failed!");
     return;
   }
   Serial.println("SD card initialized.");
@@ -100,12 +98,12 @@ void setup()
   Serial.println("TFT initialized");
 
   gstate.display.playGif(gifPath);
-  gstate.tft.fillScreen(TFT_BLACK);
   Serial.println("GIF Opened...");
+  gstate.tft.fillScreen(TFT_BLACK);
   gstate.tft.setSwapBytes(true);
 
   xTaskCreatePinnedToCore(
-      readBluetoothSerial,
+      bluetoothSerialReaderTask,
       "bluetoothSerial",
       4048,
       NULL,
@@ -114,7 +112,7 @@ void setup()
       0);
 
   xTaskCreatePinnedToCore(
-      readControlSerial,
+      controlSerialReaderTask,
       "controlSerial",
       4048,
       NULL,
@@ -123,7 +121,7 @@ void setup()
       0);
 
   xTaskCreatePinnedToCore(
-      executorTask,
+      runnerTask,
       "executor",
       6096,
       NULL,
@@ -131,28 +129,30 @@ void setup()
       NULL,
       1);
 
-  gstate.mp3Serial.begin(9600, swSerialConfig, PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX);
-  // gstate.dfplayer.begin();
-  // gstate.dfplayer.reset(); 
-  // gstate.dfplayer.setPlaybackSource(DfMp3_PlaySource_Sd);
-  // gstate.dfplayer.setPlaybackMode(DfMp3_PlaybackMode_SingleRepeat);
-  //gstate.dfplayer.start();
+  gstate.mp3Serial.begin(9600, EspSoftwareSerial::SWSERIAL_8N1, PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX);
+  gstate.dfplayer.begin();
+  gstate.dfplayer.reset(); 
+  gstate.dfplayer.setPlaybackSource(DfMp3_PlaySource_Sd);
+  gstate.dfplayer.setPlaybackMode(DfMp3_PlaybackMode_SingleRepeat);
+  gstate.dfplayer.start();
 
-  // gstate.dfplayer.setVolume(100);
+  gstate.dfplayer.setVolume(2);
   // //gstate.dfplayer.enableDac();
 
-  // uint16_t count = gstate.dfplayer.getTotalTrackCount(DfMp3_PlaySource_Sd);
-  // Serial.print("files ");
-  // Serial.println(count);
+  uint16_t count = gstate.dfplayer.getTotalTrackCount(DfMp3_PlaySource_Sd);
+  Serial.print("files ");
+  Serial.println(count);
 
   // uint16_t mode = gstate.dfplayer.getPlaybackMode();  
   // Serial.print("playback mode ");
   // Serial.println(mode);
-  // gstate.dfplayer.playRandomTrackFromAll();
+  gstate.dfplayer.playRandomTrackFromAll();
 
 }
 
-uint32_t counter = 0;
+// ----------------------------------------------------------------------------
+// Loop
+// ----------------------------------------------------------------------------
 
 void loop()
 {
@@ -161,54 +161,15 @@ void loop()
 }
 
 // ----------------------------------------------------------------------------
-// Tasks
+// Function Definitions
 // ----------------------------------------------------------------------------
 
-void processLine(SerialUnitEndpoint source, String &line)
+void processSerialUnit(SerialUnitEndpoint source, String &line)
 {
   SerialUnitAlias alias = gstate.reader.readAlias(line);
   gstate.router.route(source, alias, line);
   ISerialUnit unit = gstate.reader.readUnit(alias, line);
-  gstate.executor.process(alias, unit);
-}
-
-void readBluetoothSerial(void *pvParameters)
-{
-  while (true)
-  {
-    while (gstate.serialBT.available())
-    {
-      String line = gstate.serialBT.readStringUntil('\n');
-      processLine(BLUETOOTH, line);
-      Serial.print("BT #");
-      Serial.println(line);
-    }
-    vTaskDelay(portTICK_PERIOD_MS);
-  }
-}
-void readControlSerial(void *pvParameters)
-{
-  while (true)
-  {
-    while (gstate.controlSerial.available())
-    {
-      String line = gstate.controlSerial.readStringUntil('\n');
-      processLine(CONTROL, line);
-      Serial.print("CT #");
-      Serial.println(line);
-    }
-    vTaskDelay(portTICK_PERIOD_MS);
-  }
-}
-
-void executorTask(void *pvParameters)
-{
-  while (true)
-  {
-    gstate.executor.execute();
-    gstate.display.update();
-    taskYIELD();
-  }
+  gstate.cmdExecutor.execute(alias, unit);
 }
 
 void halt()
@@ -217,5 +178,55 @@ void halt()
   {
     Serial.println("Halting...");
     delay(1000);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Task Definitions
+// ----------------------------------------------------------------------------
+
+void bluetoothSerialReaderTask(void *pvParameters)
+{
+  while (true)
+  {
+    while (gstate.serialBT.available())
+    {
+      try {
+        String line = gstate.serialBT.readStringUntil('\n');
+        processSerialUnit(BLUETOOTH, line);
+        Serial.print("BT #");
+        Serial.println(line);
+      } catch (const std::exception& e) {
+        Serial.println("ERROR: Could not read bluetooth serial. Reason: " + String(e.what()));
+      }
+    }
+    vTaskDelay(portTICK_PERIOD_MS);
+  }
+}
+
+
+void controlSerialReaderTask(void *pvParameters)
+{
+  while (true)
+  {
+    while (gstate.controlSerial.available())
+    {
+      String line = gstate.controlSerial.readStringUntil('\n');
+      processSerialUnit(CONTROL, line);
+      Serial.print("CT#");
+      Serial.println(line);
+    }
+    vTaskDelay(portTICK_PERIOD_MS);
+  }
+}
+
+void runnerTask(void *pvParameters)
+{
+  while (true)
+  {
+    gstate.cmdExecutor.run();
+    gstate.display.run();
+    gstate.dfplayer.loop();
+    taskYIELD(); // Does not delay, but allows other tasks to run
   }
 }
