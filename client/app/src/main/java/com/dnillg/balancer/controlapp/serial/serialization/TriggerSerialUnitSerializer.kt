@@ -16,10 +16,11 @@ class TriggerSerialUnitSerializer : SerialUnitSerializer<TriggerSerialUnit> {
 
     override fun serialize(unit: SerialUnit): String {
         unit as TriggerSerialUnit
-        return "${unit.triggerType}"
+        return "${unit.triggerType},${unit.userData}"
     }
 
     override fun deserialize(line: String): TriggerSerialUnit {
-        return TriggerSerialUnit(TriggerType.valueOf(line));
+        val parts = line.split(",")
+        return TriggerSerialUnit(TriggerType.valueOf(parts[0]), parts[1]);
     }
 }

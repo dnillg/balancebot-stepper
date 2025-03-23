@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <map>
 
-#include "SerialUnits.hpp"
+#include <SerialUnits/SerialUnits.hpp>
 #include <BluetoothSerial.h>
 
 class SerialUnitRouter {

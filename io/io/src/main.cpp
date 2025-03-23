@@ -11,9 +11,11 @@
 
 #include "config.h"
 #include "SerialUnitRouter.hpp"
-#include "SerialUnitReader.hpp"
-#include "CommandExecutor.hpp"
+#include "SerialUnitProcessor.hpp"
 #include "Soul.hpp"
+#include "Listeners/LoveYouListener.hpp"
+#include "esp_system.h"
+#include "esp_err.h"
 
 // ----------------------------------------------------------------------------
 // Function Declarations
@@ -37,8 +39,7 @@ struct GlobalState
   HardwareSerial controlSerial;
   BluetoothSerial serialBT;
   SerialUnitRouter router;
-  SerialUnitReader reader;
-  CommandExecutor cmdExecutor;
+  SerialUnitProcessor serialUnitProcessor;
   EspSoftwareSerial::UART mp3Serial;
   TFT_eSPI tft;
   RobotDisplay display;
@@ -50,8 +51,7 @@ struct GlobalState
       : controlSerial(2),
         serialBT(),
         router(serialBT, controlSerial),
-        reader(),
-        cmdExecutor(),
+        serialUnitProcessor(),
         tft(TFT_eSPI(240, 240)),
         mp3Serial(PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX),
         display(tft),
@@ -74,6 +74,8 @@ const char *gifPath = "/carma-240.gif";
 void setup()
 {
   setCpuFrequencyMhz(160);
+  delay(10);
+  esp_log_level_set("*", ESP_LOG_INFO);  // Set log level for verbosity
   delay(10);
 
   gstate.controlSerial.begin(CONTROL_SERIAL_BAUD);
@@ -148,6 +150,7 @@ void setup()
   // Serial.println(mode);
   gstate.dfplayer.playRandomTrackFromAll();
 
+  gstate.serialUnitProcessor.addListener(new LoveYouListener());
 }
 
 // ----------------------------------------------------------------------------
@@ -156,8 +159,6 @@ void setup()
 
 void loop()
 {
-  //gstate.dfplayer.loop();
-  //Serial.println(gstate.dfplayer.getVolume());
 }
 
 // ----------------------------------------------------------------------------
@@ -166,10 +167,9 @@ void loop()
 
 void processSerialUnit(SerialUnitEndpoint source, String &line)
 {
-  SerialUnitAlias alias = gstate.reader.readAlias(line);
+  SerialUnitAlias alias = SerialUnitFactory::readAlias(line);
   gstate.router.route(source, alias, line);
-  ISerialUnit unit = gstate.reader.readUnit(alias, line);
-  gstate.cmdExecutor.execute(alias, unit);
+  gstate.serialUnitProcessor.process(alias, line);
 }
 
 void halt()
@@ -194,7 +194,7 @@ void bluetoothSerialReaderTask(void *pvParameters)
       try {
         String line = gstate.serialBT.readStringUntil('\n');
         processSerialUnit(BLUETOOTH, line);
-        Serial.print("BT #");
+        Serial.print("BT: ");
         Serial.println(line);
       } catch (const std::exception& e) {
         Serial.println("ERROR: Could not read bluetooth serial. Reason: " + String(e.what()));
@@ -213,8 +213,10 @@ void controlSerialReaderTask(void *pvParameters)
     {
       String line = gstate.controlSerial.readStringUntil('\n');
       processSerialUnit(CONTROL, line);
-      Serial.print("CT#");
-      Serial.println(line);
+      if (!line.startsWith("ALIVE>")) {
+        Serial.print("CT: ");
+        Serial.println(line);
+      }
     }
     vTaskDelay(portTICK_PERIOD_MS);
   }
@@ -224,7 +226,6 @@ void runnerTask(void *pvParameters)
 {
   while (true)
   {
-    gstate.cmdExecutor.run();
     gstate.display.run();
     gstate.dfplayer.loop();
     taskYIELD(); // Does not delay, but allows other tasks to run

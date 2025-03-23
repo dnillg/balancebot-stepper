@@ -60,7 +60,11 @@ class SerialWorker(
     while (!btConnection.isClosed) {
       mutex.withLock {
         unitsToSend.forEach {
-          btConnection.writeLine(serial.send(it))
+          try {
+            btConnection.writeLine(serial.send(it))
+          } catch (e : Exception) {
+            Log.e(this.javaClass .simpleName, "Could not write BT", e);
+          }
         }
         unitsToSend.clear();
       }

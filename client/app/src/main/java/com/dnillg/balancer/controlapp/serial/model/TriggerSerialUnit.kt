@@ -11,5 +11,6 @@ enum class TriggerType {
 }
 
 class TriggerSerialUnit (
-  val triggerType: TriggerType
+  val triggerType: TriggerType,
+  val userData: String = ""
 ) : SerialUnit

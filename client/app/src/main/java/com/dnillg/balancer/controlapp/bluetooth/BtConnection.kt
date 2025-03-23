@@ -25,9 +25,13 @@ class BtConnection (
 
     override fun reconnect() {
         closeResources();
-        this.socket = createSocket(this.device);
-        this.bufferedReader = BufferedReader(InputStreamReader(socket.inputStream));
-        this.bufferedWriter = BufferedWriter(OutputStreamWriter(socket.outputStream));
+        try {
+            this.socket = createSocket(this.device);
+            this.bufferedReader = BufferedReader(InputStreamReader(socket.inputStream));
+            this.bufferedWriter = BufferedWriter(OutputStreamWriter(socket.outputStream));
+        } catch (e: Exception) {
+            Log.e(this::class.simpleName, "Could not reconnect", e);
+        }
     }
 
     private fun closeResources() {

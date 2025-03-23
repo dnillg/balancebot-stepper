@@ -81,7 +81,10 @@ import com.dnillg.balancer.controlapp.serial.model.DiagDataSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDResponseSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.MotorToggleSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.SerialUnit
 import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.TriggerSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.TriggerType
 import com.dnillg.balancer.controlapp.timeseries.TimeSeriesWindow
 import com.dnillg.balancer.controlapp.ui.theme.ControlAppTheme
 import com.github.mikephil.charting.charts.LineChart
@@ -129,6 +132,10 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     TimeSeriesType.entries.forEach {
       timeSeriesWindow.init(it.alias, 100)
     }
+  }
+
+  private fun sendUnit(unit: SerialUnit) {
+    serialWorker?.enqueue(unit);
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -394,7 +401,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             SimpleButton({ onDismiss() }, Icons.Default.Notifications)
             SimpleButton({ onDismiss() }, Icons.Default.Face)
             SimpleButton({ onDismiss() }, Icons.Default.Face)
-            SimpleButton({ onDismiss() }, Icons.Default.Favorite)
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.FEELING_LOVE)) }, Icons.Default.Favorite)
             SimpleButton({ onDismiss() }, HornSpeakerWithHandleSvgrepoCom)
           }
 
