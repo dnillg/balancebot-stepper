@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.util.Log
 import com.dnillg.balancer.controlapp.serial.SerialInterface
-import kotlinx.coroutines.Job
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader

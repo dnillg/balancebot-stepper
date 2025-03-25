@@ -39,7 +39,7 @@ class TimeSeriesWindow<T : TimeSeriesEntry> (
     seriesConfigs.remove(name)
   }
 
-  fun init(name: String, samplesPerSecond: Int = 200) {
+  fun init(name: String, samplesPerSecond: Int = 40) {
     this.seriesConfigs[name] = TimeSeriesConfig(samplesPerSecond)
     addPoint(name, 0.0f)
   }

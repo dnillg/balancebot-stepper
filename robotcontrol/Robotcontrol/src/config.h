@@ -29,7 +29,7 @@
 // IO Serial Config
 // ----------------------------------------------------------------------------
 
-#define IO_SERIAL_BAUD 921600
+#define IO_SERIAL_BAUD 115200
 #define IO_SERIAL_PORT 2
 #define IO_SERIAL_ENABLED true
 

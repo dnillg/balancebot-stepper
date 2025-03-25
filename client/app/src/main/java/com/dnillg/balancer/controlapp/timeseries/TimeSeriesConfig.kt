@@ -1,6 +1,6 @@
 package com.dnillg.balancer.controlapp.timeseries
 
-class TimeSeriesConfig (val samplesPerSecond: Int = 200) {
+class TimeSeriesConfig (val samplesPerSecond: Int = 40) {
   private var counter = 0L
   val diffMultiplier: Float = 1000.0f / samplesPerSecond
 

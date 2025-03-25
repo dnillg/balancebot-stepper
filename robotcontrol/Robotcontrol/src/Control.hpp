@@ -36,6 +36,7 @@ private:
     return speed * 16 / MOTOR_MAX_MICROSTEPPING;
   }
   uint16_t cycleNo = 0;
+  uint16_t millis = 0;
 
 public:
   Control();
@@ -61,6 +62,7 @@ public:
   double getSpeedPIDOutput();
   MotorOutput &getMotorOutput();
   uint16_t getCycleNo();
+  uint16_t getMillis();
   void printPidValues();
   void setControlMode(ControlMode mode);
 };

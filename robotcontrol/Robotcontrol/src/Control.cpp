@@ -27,6 +27,8 @@ void Control::setSpeedParams(double kp, double ki, double kd)
   speedPID.resetOutputSum();
 }
 
+constexpr uint16_t millisPerCycle = 1000 / CONTROL_FREQUENCY;
+
 void Control::compute()
 {
   speedPID.Compute();
@@ -39,6 +41,11 @@ void Control::compute()
   if (cycleNo >= 1000)
   {
     cycleNo = 0;
+  }
+  millis += 1000 / CONTROL_FREQUENCY;
+  if (millis >= 1000)
+  {
+    millis = millisPerCycle;
   }
 }
 
@@ -90,6 +97,11 @@ double Control::getSpeedPIDOutput()
 uint16_t Control::getCycleNo()
 {
   return cycleNo;
+}
+
+uint16_t Control::getMillis()
+{
+  return millis;
 }
 
 void Control::setRollSetpoint(double rollSetpoint)

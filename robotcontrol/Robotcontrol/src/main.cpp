@@ -16,6 +16,7 @@
 #include "Control.hpp"
 #include "CommandParser.hpp"
 #include "StationaryCutoff.hpp"
+#include "SerialUnits/SerialUnits.hpp"
 
 // ----------------------------------------------------------------------------
 // Types
@@ -54,7 +55,6 @@ struct GlobalState
   IMU imu;
   Motor leftMotor = Motor(createMotorLeftPins(), motorLeftTimerFunction, 0, FORWARD);
   Motor rightMotor = Motor(createMotorRightPins(), motorRightTimerFunction, 1, BACKWARD);
-  uint64_t counter = 0;
   //RemoteControl remoteControl;
   SpeedAggregator speedAgg500 = SpeedAggregator(10, 10); // 500ms
   SpeedAggregator speedAgg250 = SpeedAggregator(10, 5); // 250ms
@@ -99,7 +99,7 @@ void setup()
 {
   setCpuFrequencyMhz(160);
   delay(100);
-  Serial.begin(921600);
+  Serial.begin(115200);
   delay(333);
 
   pinMode(PIN_TMC5160_LEFT_EN, OUTPUT);
@@ -213,19 +213,23 @@ void controlTask(void *pvParameters)
 
       int16_t step16SpeedLeft = gstate.control.getSteps16Left();
       int16_t step16SpeedRight = gstate.control.getSteps16Right();
-      String output = "Roll: " + String(currentRoll, 4) + 
-                ", Speed: " + String(gstate.speedAgg500.getSpeed()) + 
-                ", Setpoint: " + String(gstate.control.getRollSetpoint(), 4) + 
-                ", Left: " + String(step16SpeedLeft) + 
-                ", Right: " + String(step16SpeedRight);
+      uint16_t cycleNo = gstate.control.getCycleNo();
+      // String output = "Roll: " + String(currentRoll, 4) + 
+      //           ", Speed: " + String(gstate.speedAgg500.getSpeed()) + 
+      //           ", Setpoint: " + String(gstate.control.getRollSetpoint(), 4) + 
+      //           ", Left: " + String(step16SpeedLeft) + 
+      //           ", Right: " + String(step16SpeedRight);
       #if PRINT_CONTROL_STATE == true 
-      if (gstate.control.getCycleNo() % 40 == 0) {
+      if (cycleNo % 40 == 0) {
         Serial.println(output);
       }
       #endif
       #if IO_SERIAL_ENABLED == true
-      if (gstate.control.getCycleNo()% 10 == 0) {
-        gstate.ioSerial.println("ALIVE>");
+      // if (cycleNo % 200 == 0) {
+      //   gstate.ioSerial.println("ALIVE>");
+      // }
+      if (cycleNo % 5 == 0) {
+        gstate.ioSerial.println(DiagSerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint(), gstate.speedAgg500.getSpeed(), 0.0, step16SpeedLeft, step16SpeedRight, 0.0, 0.0).toString());
       }
       #endif
       gstate.leftMotor.setSpeed(gstate.stationaryCutoff.filter(step16SpeedLeft)); 
@@ -241,7 +245,6 @@ void controlTask(void *pvParameters)
       gstate.speedAgg500.consume(currentSpeed);
       gstate.speedAgg250.consume(currentSpeed);
 
-      
       gstate.failSafe.heartBeat();
     }
 

@@ -39,7 +39,9 @@ void SerialUnitRouter::route(SerialUnitEndpoint source, SerialUnitAlias alias, S
 void SerialUnitRouter::send(SerialUnitEndpoint destination, String message) {
     if (destination == SerialUnitEndpoint::CONTROL) {
         controlSerial->print(message);
+        Serial.println("CT-SND: " + message);
     } else if (destination == SerialUnitEndpoint::BLUETOOTH) {
         bluetoothSerial->print(message);
+        Serial.println("BT-SND: " + message);
     }
 }

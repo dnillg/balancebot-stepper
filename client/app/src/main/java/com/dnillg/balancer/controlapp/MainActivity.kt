@@ -114,7 +114,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     ConcurrentSerialUnitBacklog()
   private val timeSeriesWindow = TimeSeriesWindow(
     duration = 5.0,
-    entryCreator = { timeSeries, value -> TimeSeriesChartEntry(timeSeries, value) }
+    entryCreator = { timeSeries, value -> TimeSeriesChartEntry(timeSeries, value) },
   )
   private val sinusGenerators: MutableMap<String, SinusGenerator> = HashMap()
 
@@ -127,10 +127,10 @@ class MainActivity @Inject constructor() : ComponentActivity() {
 
   init {
     sinusGenerators["1"] =
-      SinusGenerator(samplesPerSecond = 100, amplitude = 100.0, frequency = 2.0)
+      SinusGenerator(samplesPerSecond = 40, amplitude = 100.0, frequency = 2.0)
     sinusGenerators["2"] = SinusGenerator(samplesPerSecond = 100, amplitude = 1.0, frequency = 3.0)
     TimeSeriesType.entries.forEach {
-      timeSeriesWindow.init(it.alias, 100)
+      timeSeriesWindow.init(it.alias, 40)
     }
   }
 
@@ -368,8 +368,8 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       while (true) {
         val items = chartDataBacklog.getAndClear()
         for (i in items) {
-          timeSeriesWindow.addPoint(TimeSeriesType.ROLL.alias, i.roll)
-          timeSeriesWindow.addPoint(TimeSeriesType.TARGET_ROLL.alias, i.targetRoll)
+          timeSeriesWindow.addPoint(TimeSeriesType.ROLL.alias, Math.toDegrees(i.roll.toDouble()).toFloat() + 90f)
+          timeSeriesWindow.addPoint(TimeSeriesType.TARGET_ROLL.alias, Math.toDegrees(i.targetRoll.toDouble()).toFloat() + 90f)
           timeSeriesWindow.addPoint(TimeSeriesType.SPEED.alias, i.speed)
           timeSeriesWindow.addPoint(TimeSeriesType.TARGET_SPEED.alias, i.targetSpeed)
           timeSeriesWindow.addPoint(TimeSeriesType.MOTOR_LEFT_SPEED.alias, i.motorLeft)
@@ -446,7 +446,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     serialWorker!!.subscribe(DiagDataSerialUnit::class.java) {
       CoroutineScope(Dispatchers.Default).launch {
         chartDataBacklog.add(it as DiagDataSerialUnit)
-        Log.i(this::class.simpleName, "Added to backlog")
+        Log.i(this::class.simpleName, "Added to backlog:" + it.targetRoll)
       }
     }
     serialWorker!!.subscribe(GetPIDResponseSerialUnit::class.java) {
@@ -544,10 +544,12 @@ class MainActivity @Inject constructor() : ComponentActivity() {
 
   private fun startSinGenerator() {
     asyncJobs.sinGenerator = CoroutineScope(Dispatchers.Default).launch {
+      var seqNo = 0;
       while (true) {
         val v = sinusGenerators["2"]!!.next()
         chartDataBacklog.add(
           DiagDataSerialUnit(
+            seqNo,
             v * 150f,
             v * 180f,
             v * 8000f,
@@ -556,7 +558,9 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             v * 6000f
           )
         )
+        seqNo+=5;
         delay(5);
+        seqNo %= 1000;
       }
     }
   }

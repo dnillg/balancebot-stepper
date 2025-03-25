@@ -9,7 +9,7 @@
 // Serial
 // ----------------------------------------------------------------------------
 
-#define SERIAL_BAUD 921600
+#define SERIAL_BAUD 115200
 
 // ----------------------------------------------------------------------------
 // Bluetooth
@@ -21,7 +21,7 @@
 // Control Serial
 // ----------------------------------------------------------------------------
 
-#define CONTROL_SERIAL_BAUD 921600
+#define CONTROL_SERIAL_BAUD 115200
 #define CONTROL_SERIAL_PORT 2
 #define CONTROL_SERIAL_ENABLED true
 #define CONTROL_SERIAL_FORMAT EspSoftwareSerial::SWSERIAL_8N1

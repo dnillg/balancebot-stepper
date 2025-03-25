@@ -16,18 +16,20 @@ class DiagDataSerializer : SerialUnitSerializer<DiagDataSerialUnit> {
 
     override fun serialize(unit: SerialUnit): String {
       unit as DiagDataSerialUnit
-      return "${shortFloat(unit.roll)},${shortFloat(unit.targetRoll)},${shortFloat(unit.speed)},${shortFloat(unit.targetSpeed)},${shortFloat(unit.motorLeft)},${shortFloat(unit.motorRight)}"
+      return "${unit.seqNo},${shortFloat(unit.roll)},${shortFloat(unit.targetRoll)},${shortFloat(unit.speed)},${shortFloat(unit.targetSpeed)},${shortFloat(unit.motorLeft)},${shortFloat(unit.motorRight)}"
     }
 
     override fun deserialize(line: String): DiagDataSerialUnit {
       val parts = line.split(SEPARATOR)
+      var i = 0;
       return DiagDataSerialUnit(
-        parts[0].toFloat(),
-        parts[1].toFloat(),
-        parts[2].toFloat(),
-        parts[3].toFloat(),
-        parts[4].toFloat(),
-        parts[5].toFloat()
+        parts[i++].toInt(),
+        parts[i++].toFloat(),
+        parts[i++].toFloat(),
+        parts[i++].toFloat(),
+        parts[i++].toFloat(),
+        parts[i++].toFloat(),
+        parts[i++].toFloat()
       )
     }
 

@@ -70,6 +70,7 @@ SPIClass SPISD(HSPI);
 SPIClass SPITFT(VSPI);
 
 const char *gifPath = "/carma-240.gif";
+const char *gifPath2 = "/pedro-4x.gif";
 
 void setup()
 {
@@ -99,7 +100,7 @@ void setup()
   gstate.tft.init();
   Serial.println("TFT initialized");
 
-  gstate.display.playGif(gifPath);
+  gstate.display.playGif(gifPath2);
   Serial.println("GIF Opened...");
   gstate.tft.fillScreen(TFT_BLACK);
   gstate.tft.setSwapBytes(true);
@@ -138,8 +139,7 @@ void setup()
   gstate.dfplayer.setPlaybackMode(DfMp3_PlaybackMode_SingleRepeat);
   gstate.dfplayer.start();
 
-  gstate.dfplayer.setVolume(2);
-  // //gstate.dfplayer.enableDac();
+  gstate.dfplayer.setVolume(5);
 
   uint16_t count = gstate.dfplayer.getTotalTrackCount(DfMp3_PlaySource_Sd);
   Serial.print("files ");
@@ -194,8 +194,10 @@ void bluetoothSerialReaderTask(void *pvParameters)
       try {
         String line = gstate.serialBT.readStringUntil('\n');
         processSerialUnit(BLUETOOTH, line);
-        Serial.print("BT: ");
+        #if LOG_BT_REC == true
+        Serial.print("BT-REC: ");
         Serial.println(line);
+        #endif
       } catch (const std::exception& e) {
         Serial.println("ERROR: Could not read bluetooth serial. Reason: " + String(e.what()));
       }
@@ -213,10 +215,12 @@ void controlSerialReaderTask(void *pvParameters)
     {
       String line = gstate.controlSerial.readStringUntil('\n');
       processSerialUnit(CONTROL, line);
+      #if LOG_CT_REC == true
       if (!line.startsWith("ALIVE>")) {
-        Serial.print("CT: ");
+        Serial.print("CT-REC: ");
         Serial.println(line);
       }
+      #endif
     }
     vTaskDelay(portTICK_PERIOD_MS);
   }
