@@ -1,33 +1,22 @@
 #include "Soul.hpp"
 
-Soul::Soul(
-    EspSoftwareSerial::UART *mp3Serial,
-    RobotDisplay *display,
-    SDFS* sd)
+Soul::Soul(DfMp3 *df, RobotDisplay *display)
+    : df(df), display(display), currentSequence(SequenceType::ROBOT_FACE_STANDARD)
 {
-    this->mp3Serial = mp3Serial;
-    this->display = display;
-    this->sequence = SEQUENCE_TYPE_IDLE;
-    this->sd = sd;
 }
 
 void Soul::run()
 {
-    // TODO
+    // Nothing
 }
 
 void Soul::setSequence(SequenceType sequence)
 {
-    this->sequence = sequence;
+    //df->stop();
+    this->currentSequence = sequence;
+    char fileName[16];  // 4 digits + 1 null terminator
+    sprintf(fileName, "/%04d.gif", sequence);
+    this->display->playGif(fileName);
+    this->df->playMp3FolderTrack(sequence);
+    this->df->start();
 }
-
-uint32_t Soul::elapsedNanos()
-{
-    return micros() * 1000;
-}
-
-void Soul::getFrame(uint16_t frameNumber, uint8_t *frameBuffer)
-{
-    // TODO
-}
-

@@ -11,17 +11,26 @@ RobotDisplay::RobotDisplay(TFT_eSPI &tft) : tft(tft)
 void RobotDisplay::playGif(const char *gifPath)
 {
   Serial.println("Opening GIF...");
+  if (isOpen)
+  {
+    gif.close();
+    gif.reset();
+  }
   // Open the GIF file
   if (!gif.open(gifPath, gifOpen, gifClose, fileRead, gifSeek, gifDraw))
   {
     Serial.println("Failed to open GIF file!");
-    while (1)
-      ;
+    isOpen = false;
+  } else {
+    isOpen = true;
   }
 }
 
 bool RobotDisplay::run()
 {
+  if (!isOpen) {
+    return false;
+  }
   if (gif.playFrame(true, NULL) == 0)
   {
     gif.reset();

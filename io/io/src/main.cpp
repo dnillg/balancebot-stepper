@@ -9,11 +9,12 @@
 #include <DFPlayer.h>
 #include <DFMiniMp3.h>
 
+#include "DfConfig.h"
 #include "config.h"
 #include "SerialUnitRouter.hpp"
 #include "SerialUnitProcessor.hpp"
 #include "Soul.hpp"
-#include "Listeners/LoveYouListener.hpp"
+#include "Listeners/SequenceTriggerListener.hpp"
 #include "esp_system.h"
 #include "esp_err.h"
 
@@ -32,8 +33,6 @@ void runnerTask(void *pvParameters);
 // Global Variables
 // ----------------------------------------------------------------------------
 
-typedef DFMiniMp3<EspSoftwareSerial::UART, DfMp3NoCallback> DfMp3;
-
 struct GlobalState
 {
   HardwareSerial controlSerial;
@@ -44,7 +43,6 @@ struct GlobalState
   TFT_eSPI tft;
   RobotDisplay display;
   Soul soul;
-  //DFPlayer dfplayer;
   DfMp3 dfplayer;
 
   GlobalState()
@@ -55,8 +53,8 @@ struct GlobalState
         tft(TFT_eSPI(240, 240)),
         mp3Serial(PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX),
         display(tft),
-        soul(&mp3Serial, &display, &SD),
-        dfplayer(mp3Serial)
+        dfplayer(mp3Serial),
+        soul(&dfplayer, &display)
   {
   }
 };
@@ -97,13 +95,26 @@ void setup()
   }
   Serial.println("SD card initialized.");
 
+  Serial.println("Initializing DFPlayer.");
+  gstate.mp3Serial.begin(9600, EspSoftwareSerial::SWSERIAL_8N1, PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX);
+  delay(100);
+  gstate.dfplayer.begin();
+  gstate.dfplayer.reset(); 
+  gstate.dfplayer.setPlaybackSource(DfMp3_PlaySource_Sd);
+  gstate.dfplayer.setPlaybackMode(DfMp3_PlaybackMode::DfMp3_PlaybackMode_Repeat);
+  gstate.dfplayer.setVolume(12);
+  Serial.println("DFPlayer initialized.");
+
   gstate.tft.init();
   Serial.println("TFT initialized");
 
-  gstate.display.playGif(gifPath2);
+  //gstate.display.playGif(gifPath2);
   Serial.println("GIF Opened...");
   gstate.tft.fillScreen(TFT_BLACK);
   gstate.tft.setSwapBytes(true);
+
+  gstate.serialUnitProcessor.addListener(new SequenceTriggerListener(&gstate.soul));
+  gstate.soul.setSequence(SequenceType::ROBOT_FACE_STANDARD);
 
   xTaskCreatePinnedToCore(
       bluetoothSerialReaderTask,
@@ -131,26 +142,6 @@ void setup()
       2,
       NULL,
       1);
-
-  gstate.mp3Serial.begin(9600, EspSoftwareSerial::SWSERIAL_8N1, PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX);
-  gstate.dfplayer.begin();
-  gstate.dfplayer.reset(); 
-  gstate.dfplayer.setPlaybackSource(DfMp3_PlaySource_Sd);
-  gstate.dfplayer.setPlaybackMode(DfMp3_PlaybackMode_SingleRepeat);
-  gstate.dfplayer.start();
-
-  gstate.dfplayer.setVolume(5);
-
-  uint16_t count = gstate.dfplayer.getTotalTrackCount(DfMp3_PlaySource_Sd);
-  Serial.print("files ");
-  Serial.println(count);
-
-  // uint16_t mode = gstate.dfplayer.getPlaybackMode();  
-  // Serial.print("playback mode ");
-  // Serial.println(mode);
-  gstate.dfplayer.playRandomTrackFromAll();
-
-  gstate.serialUnitProcessor.addListener(new LoveYouListener());
 }
 
 // ----------------------------------------------------------------------------
@@ -230,6 +221,7 @@ void runnerTask(void *pvParameters)
 {
   while (true)
   {
+    gstate.serialUnitProcessor.run();
     gstate.display.run();
     gstate.dfplayer.loop();
     taskYIELD(); // Does not delay, but allows other tasks to run

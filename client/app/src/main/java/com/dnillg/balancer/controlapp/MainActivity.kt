@@ -33,14 +33,19 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -398,11 +403,19 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
           ) {
-            SimpleButton({ onDismiss() }, Icons.Default.Notifications)
-            SimpleButton({ onDismiss() }, Icons.Default.Face)
-            SimpleButton({ onDismiss() }, Icons.Default.Face)
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.FEELING_LOVE)) }, Icons.Default.Favorite)
-            SimpleButton({ onDismiss() }, HornSpeakerWithHandleSvgrepoCom)
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.SLAV_CAT)) }, Icons.Default.Build)
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ZLAD)) }, Icons.Default.Face)
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CHARLIE)) }, Icons.Default.Place)
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CAT_KISS)) }, Icons.Default.Favorite)
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.OIIUU_CAT)) }, Icons.Default.Delete)
+          }
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+          ) {
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.PEDRO_4X)) }, Icons.Default.ShoppingCart)
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.RICK_ROLL)) }, Icons.Default.Edit)
+            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) }, Icons.Default.Check)
           }
 
         }

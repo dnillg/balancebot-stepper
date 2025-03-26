@@ -6,9 +6,9 @@
 
 void test_DiagSerialUnit()
 {
-    DiagSerialUnit diag(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0);
+    DiagSerialUnit diag(4, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0);
     String line = diag.toString();
-    TEST_ASSERT_EQUAL_STRING("DIAG>1.000,2.000,3.000,4.000,5.000,6.000,7.000,8.000", line.c_str());
+    TEST_ASSERT_EQUAL_STRING("DIAG>4,1.000,2.000,3.000,4.000,5.000,6.000,7.000,8.000", line.c_str());
     TEST_ASSERT_EQUAL(DIAG, diag.getAlias());
     DiagSerialUnit* diag2 = (DiagSerialUnit*)(DiagSerialUnit::fromLine(line));
     TEST_ASSERT_EQUAL(DIAG, diag2->getAlias());
@@ -46,6 +46,20 @@ void test_TriggerSerialUnit()
     TEST_ASSERT_EQUAL_STRING(line.c_str(), "TRIG>type,userData");
     TEST_ASSERT_EQUAL(TRIG, trigger2->getAlias());
     TEST_ASSERT_EQUAL_STRING("userData", trigger2->getUserData().c_str());
+    TEST_ASSERT_EQUAL_STRING("type", trigger2->getType().c_str());
+    delete trigger2;
+}
+
+void test_TriggerSerialUnit2()
+{
+    TriggerSerialUnit trigger("type", "");
+    String line = trigger.toString();
+    TEST_ASSERT_EQUAL_STRING("TRIG>type,", line.c_str());
+    TEST_ASSERT_EQUAL(TRIG, trigger.getAlias());
+    TriggerSerialUnit* trigger2 = (TriggerSerialUnit*)(TriggerSerialUnit::fromLine(line));
+    TEST_ASSERT_EQUAL_STRING(line.c_str(), "TRIG>type,");
+    TEST_ASSERT_EQUAL(TRIG, trigger2->getAlias());
+    TEST_ASSERT_EQUAL_STRING("", trigger2->getUserData().c_str());
     TEST_ASSERT_EQUAL_STRING("type", trigger2->getType().c_str());
     delete trigger2;
 }
@@ -110,6 +124,7 @@ void setup() {
     RUN_TEST(test_DiagSerialUnit);
     RUN_TEST(test_ControlSerialUnit);
     RUN_TEST(test_TriggerSerialUnit);
+    RUN_TEST(test_TriggerSerialUnit2);
     RUN_TEST(test_GetPidSerialUnit);
     RUN_TEST(test_SetPidSerialUnit);
     RUN_TEST(test_GetPidResponseSerialUnit);

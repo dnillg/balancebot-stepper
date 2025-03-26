@@ -4,6 +4,9 @@
 #include <Arduino.h>
 #include <SD.h>
 #include <SoftwareSerial.h>
+#include <DFMiniMp3.h>
+
+#include "DfConfig.h"
 #include "RobotDisplay.hpp"
 
 enum SequenceType
@@ -25,19 +28,16 @@ class Soul
 {
 public:
   Soul(
-      EspSoftwareSerial::UART *mp3Serial,
-      RobotDisplay *display,
-      SDFS* sd);
+      DfMp3 *df,
+      RobotDisplay *display
+    );
   void run();
   void setSequence(SequenceType sequence);
 
 private:
-  EspSoftwareSerial::UART *mp3Serial;
-  RobotDisplay *display;
-  SDFS* sd;
-  SequenceType sequence;
-  uint32_t elapsedNanos();
-  void getFrame(uint16_t frameNumber, uint8_t *frameBuffer);
+  DfMp3* df;
+  RobotDisplay* display;
+  SequenceType currentSequence;
 };
 
 #endif // SOUL_HPP_

@@ -26,6 +26,7 @@ private:
   TFT_eSPI &tft;
   File gifFile;
   AnimatedGIF gif;
+  boolean isOpen = false;
 };
 
 #endif // ROBOTDISPLAY_HPP_

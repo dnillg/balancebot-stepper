@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <map>
 #include <vector>
+#include <list>
 
 #include "SerialUnits/SerialUnits.hpp"
 
@@ -22,43 +23,16 @@ class SerialUnitProcessor
 {
 private:
   std::map<SerialUnitAlias, std::vector<SerialUnitListener*>> serialUnitListeners = {};
-
+  std::list<ISerialUnit*> backlog;
 public:
-  ~SerialUnitProcessor()
-  {
-    for (auto const &pair : serialUnitListeners)
-    {
-      for (SerialUnitListener* listener : pair.second)
-      {
-        delete listener;
-      }
-    }
-  }
-
+  ~SerialUnitProcessor();
   void addListener(SerialUnitListener* listener)
   {
     serialUnitListeners[listener->getAlias()].push_back(listener);
   }
+  void process(const SerialUnitAlias alias, const String& line);
+  void run();
 
-  void process(const SerialUnitAlias alias, const String& line)
-  {
-    if (serialUnitListeners.find(alias) == serialUnitListeners.end())
-    {
-      return;
-    }
-    ISerialUnit* unit = 0;
-    for (SerialUnitListener* listener : serialUnitListeners[alias])
-    {
-      if (unit == 0)
-      {
-        unit = SerialUnitFactory::fromLine(line);
-      }
-      listener->consume(unit);
-    }
-    if (unit != 0) {
-      delete unit;
-    }
-  }
 };
 
 #endif // SERIALUNITPROCESSOR_HPP_

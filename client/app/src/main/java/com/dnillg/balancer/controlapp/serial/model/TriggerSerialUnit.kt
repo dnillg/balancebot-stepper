@@ -1,13 +1,17 @@
 package com.dnillg.balancer.controlapp.serial.model
 
 enum class TriggerType {
-  HORN,
-  FEELING_LOVE,
-  FEELING_FREEZING,
-  FEELING_SAD,
-  FEELING_ANGRY,
-  FEELING_HAPPY,
-  BEER
+  SLAV_CAT,
+  CHARLIE,
+  CAT_KISS,
+  PEDRO_1X,
+  PEDRO_2X,
+  PEDRO_4X,
+  RICK_ROLL,
+  ROBOT_FACE_STANDARD,
+  OIIUU_CAT,
+  ZLAD,
+  COCONUT
 }
 
 class TriggerSerialUnit (

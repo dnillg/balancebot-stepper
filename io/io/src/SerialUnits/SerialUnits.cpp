@@ -104,8 +104,8 @@ ISerialUnit *TriggerSerialUnit::fromLine(String line)
     return new ParseErrorSerialUnit(line); // Invalid format
   }
 
-  char type[50], userData[50];
-  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%49[^,],%49s", type, userData) == 2)
+  char type[50], userData[50] = {0};
+  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%49[^,],%49[^\n]", type, userData) >= 1)
   {
     return new TriggerSerialUnit(String(type), String(userData));
   }
