@@ -17,6 +17,7 @@
 #include "Listeners/SequenceTriggerListener.hpp"
 #include "esp_system.h"
 #include "esp_err.h"
+#include "BluetoothSentinel.hpp"
 
 // ----------------------------------------------------------------------------
 // Function Declarations
@@ -28,6 +29,7 @@ void halt();
 void bluetoothSerialReaderTask(void *pvParameters);
 void controlSerialReaderTask(void *pvParameters);
 void runnerTask(void *pvParameters);
+void bluetoothSentinelTask(void *pvParameters);
 
 // ----------------------------------------------------------------------------
 // Global Variables
@@ -44,6 +46,7 @@ struct GlobalState
   RobotDisplay display;
   Soul soul;
   DfMp3 dfplayer;
+  BluetoothSentinel btSentinel;
 
   GlobalState()
       : controlSerial(2),
@@ -54,7 +57,8 @@ struct GlobalState
         mp3Serial(PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX),
         display(tft),
         dfplayer(mp3Serial),
-        soul(&dfplayer, &display)
+        soul(&dfplayer, &display),
+        btSentinel(serialBT, serialUnitProcessor, router)
   {
   }
 };
@@ -117,7 +121,7 @@ void setup()
   xTaskCreatePinnedToCore(
       bluetoothSerialReaderTask,
       "bluetoothSerial",
-      4048,
+      4096,
       NULL,
       4,
       NULL,
@@ -126,7 +130,7 @@ void setup()
   xTaskCreatePinnedToCore(
       controlSerialReaderTask,
       "controlSerial",
-      4048,
+      4096,
       NULL,
       4,
       NULL,
@@ -140,6 +144,17 @@ void setup()
       2,
       NULL,
       1);
+
+  xTaskCreatePinnedToCore(
+      bluetoothSentinelTask,
+      "bluetoothSentinel",
+      2048,
+      NULL,
+      4,
+      NULL,
+      1);
+
+  Serial.println("Setup complete.");
 }
 
 // ----------------------------------------------------------------------------
@@ -195,7 +210,6 @@ void bluetoothSerialReaderTask(void *pvParameters)
   }
 }
 
-
 void controlSerialReaderTask(void *pvParameters)
 {
   while (true)
@@ -204,6 +218,7 @@ void controlSerialReaderTask(void *pvParameters)
     {
       String line = gstate.controlSerial.readStringUntil('\n');
       processSerialUnit(CONTROL, line);
+
       #if LOG_CT_REC == true
       if (!line.startsWith("ALIVE>")) {
         Serial.print("CT-REC: ");
@@ -219,9 +234,18 @@ void runnerTask(void *pvParameters)
 {
   while (true)
   {
+    gstate.soul.run();
     gstate.serialUnitProcessor.run();
     gstate.display.run();
     gstate.dfplayer.loop();
     taskYIELD(); // Does not delay, but allows other tasks to run
+  }
+}
+
+void bluetoothSentinelTask(void *pvParameters)
+{
+  while (true) {
+    gstate.btSentinel.run();
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }

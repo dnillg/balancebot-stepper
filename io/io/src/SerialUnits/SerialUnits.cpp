@@ -13,7 +13,8 @@ const std::map<SerialUnitAlias, std::string> SerialUnitAliasMap = {
     {SETPID, "SETPID"},
     {MOTTOG, "MOTTOG"},
     {TRIG, "TRIG"},
-    {NOOP, "NOOP"}};
+    {NOOP, "NOOP"}
+  };
 
 const String DiagSerialUnit::LINE_PREFIX = "DIAG>";
 const String ControlSerialUnit::LINE_PREFIX = "CTRL>";
