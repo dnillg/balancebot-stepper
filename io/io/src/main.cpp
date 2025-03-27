@@ -108,8 +108,6 @@ void setup()
   gstate.tft.init();
   Serial.println("TFT initialized");
 
-  //gstate.display.playGif(gifPath2);
-  Serial.println("GIF Opened...");
   gstate.tft.fillScreen(TFT_BLACK);
   gstate.tft.setSwapBytes(true);
 

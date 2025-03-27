@@ -13,6 +13,8 @@ import java.util.UUID
 
 class BtConnection (
     private val device : BluetoothDevice,
+    private val onConnectionLoss: () -> Unit = { },
+    private val onConnectionRecovery: () -> Unit = { }
 ) : SerialInterface {
 
     private var consecutiveErrorCount: Long = 0;
@@ -23,11 +25,14 @@ class BtConnection (
         private set
 
     override fun reconnect() {
+        onConnectionLoss();
         closeResources();
         try {
             this.socket = createSocket(this.device);
             this.bufferedReader = BufferedReader(InputStreamReader(socket.inputStream));
             this.bufferedWriter = BufferedWriter(OutputStreamWriter(socket.outputStream));
+            this.consecutiveErrorCount = 0;
+            onConnectionRecovery();
         } catch (e: Exception) {
             Log.e(this::class.simpleName, "Could not reconnect", e);
         }

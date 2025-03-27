@@ -59,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,6 +73,7 @@ import com.dnillg.balancer.controlapp.components.FloatingPointBox
 import com.dnillg.balancer.controlapp.components.Joystick
 import com.dnillg.balancer.controlapp.components.LargeButton
 import com.dnillg.balancer.controlapp.components.SimpleButton
+import com.dnillg.balancer.controlapp.components.SimpleImageButton
 import com.dnillg.balancer.controlapp.domain.chart.SinusGenerator
 import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesChartEntry
 import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesType
@@ -316,8 +318,8 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       }, Icons.Default.Call)
       SimpleButton({
         stopChartRendererRoutine()
-        serialWorker?.stop()
-        btConnection?.close()
+        closeBluetoothConnection()
+        connectionStatus.value = ConnectionStatus().toDisconnected()
       }, Icons.Default.Close)
       SimpleButton({ stepChartConfig(-1) }, Icons.Default.ArrowBack)
       SimpleButton({ stepChartConfig(1)}, Icons.Default.ArrowForward)
@@ -340,15 +342,10 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       }, Icons.Default.MoreVert)
     }
 
-    //TODO: Remove
     SidebarRow {
-      SimpleButton({
-        startChartRenderer()
-        startSinGenerator()
-        connectionStatus.value = ConnectionStatus().toConnected()
-      }, Icons.Default.PlayArrow)
+      //sinGeneratorButton()
+      SimpleImageButton({ sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) }, painterResource(R.drawable.robot))
     }
-
 
     Box(modifier = Modifier.fillMaxHeight()) {
       Joystick(modifier = Modifier.align(Alignment.Center), onMove = { x, y ->
@@ -356,6 +353,15 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         Log.i(this::class.simpleName, "Joystick: $x, $y")
       })
     }
+  }
+
+  @Composable
+  private fun sinGeneratorButton() {
+    SimpleButton({
+      startChartRenderer()
+      startSinGenerator()
+      connectionStatus.value = ConnectionStatus().toConnected()
+    }, Icons.Default.PlayArrow)
   }
 
   @Composable
@@ -394,6 +400,8 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         modifier = Modifier
           .background(Color.White, shape = RoundedCornerShape(16.dp))
           .padding(16.dp)
+          .fillMaxHeight()
+          .fillMaxWidth()
       ) {
         Column(
           verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -403,19 +411,20 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
           ) {
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.SLAV_CAT)) }, Icons.Default.Build)
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ZLAD)) }, Icons.Default.Face)
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CHARLIE)) }, Icons.Default.Place)
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CAT_KISS)) }, Icons.Default.Favorite)
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.OIIUU_CAT)) }, Icons.Default.Delete)
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.SLAV_CAT)) }, painterResource(R.drawable.cccp))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ZLAD)) }, painterResource(R.drawable.zlad))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CHARLIE)) }, painterResource(R.drawable.charlie))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CAT_KISS)) }, painterResource(R.drawable.catkiss))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.OIIUU_CAT)) }, painterResource(R.drawable.oiia))
+
           }
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
           ) {
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.PEDRO_4X)) }, Icons.Default.ShoppingCart)
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.RICK_ROLL)) }, Icons.Default.Edit)
-            SimpleButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) }, Icons.Default.Check)
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.PEDRO_4X)) }, painterResource(R.drawable.pedro))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.RICK_ROLL)) }, painterResource(R.drawable.rickrolld))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) }, painterResource(R.drawable.robot))
           }
 
         }
@@ -523,7 +532,13 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter.bondedDevices
     pairedDevices?.forEach { device ->
       if (device.name.contains("balance")) {
-        btConnection = BtConnection(device)
+        val onLoss = {
+          connectionStatus.value = ConnectionStatus().toDisconnected()
+        }
+        val onRecovery = {
+          connectionStatus.value = ConnectionStatus().toConnected()
+        }
+        btConnection = BtConnection(device, onLoss, onRecovery)
       }
     }
   }
