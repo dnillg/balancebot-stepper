@@ -41,13 +41,14 @@
 #define BNO085_ROTATION_VECTOR_PERIOD 5 // 5ms = 200Hz
 
 // ----------------------------------------------------------------------------
-// CONTROL
+// BALANANCE CONTROL
 // ----------------------------------------------------------------------------
 #define FAILSAFE_ENABLED false
-#define FAILSAFE_THRESHOLD_MS 1000
+#define FAILSAFE_THRESHOLD_MS 100
 
 #define CONTROL_TASK_ENABLED true
-#define CONTROL_FREQUENCY 200 // Hz
+#define ENABLE_CONTROL_ON_STARTUP false
+#define CONTROL_FREQUENCY 200
 
 #define CONTROL_TARGET_ROLL -1.55
 #define CONTROL_MAX_ROLL_SPEED_STEPS 1000
@@ -72,6 +73,12 @@
 #define STATIONARY_CUTOFF_ROLL_RANGE 0.0065
 
 #define AVG_SPEED_SAMPLES 20
+
+// ----------------------------------------------------------------------------
+// REMOTE CONTROL
+// ----------------------------------------------------------------------------
+
+#define REMOTE_MAX_STEERING_OFFSET 50.0
 
 // ----------------------------------------------------------------------------
 // Pins

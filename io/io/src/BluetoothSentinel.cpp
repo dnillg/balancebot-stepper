@@ -1,7 +1,7 @@
 #include "BluetoothSentinel.hpp"
 
-BluetoothSentinel::BluetoothSentinel(BluetoothSerial &serialBT, SerialUnitProcessor &serialUnitProcessor, SerialUnitRouter &serialUnitRouter)
-    : serialBT(serialBT), serialUnitProcessor(serialUnitProcessor), serialUnitRouter(serialUnitRouter) {}
+BluetoothSentinel::BluetoothSentinel(BluetoothSerial &serialBT, SerialUnitProcessor &serialUnitProcessor, HardwareSerial &controlSerial)
+    : serialBT(serialBT), serialUnitProcessor(serialUnitProcessor), controlSerial(controlSerial) {}
 
 void BluetoothSentinel::run()
 {
@@ -20,9 +20,8 @@ void BluetoothSentinel::run()
       Serial.println("Bluetooth disconnected");
       btConnected = false;
       ControlSerialUnit ctrl(0, 0);
-      String ctrlLine = ctrl.toString();
-      serialUnitProcessor.process(SerialUnitAlias::CTRL, ctrlLine);
-      serialUnitRouter.route(SerialUnitEndpoint::BLUETOOTH, SerialUnitAlias::CTRL, ctrlLine);
+      controlSerial.println(ctrl.toString());
+      
     }
   }
 }

@@ -3,8 +3,9 @@
 
 #include <Arduino.h>
 #include "SamplesWindow.hpp"
+#include "MotorOutputFilter.hpp"
 
-class StationaryCutoff
+class StationaryCutoffMotorOutputFilter : public MotorOutputFilter
 {
 private:
   double multiplier = 1.0;
@@ -17,7 +18,7 @@ private:
   double motorSpeedThreshold;
 
 public:
-  StationaryCutoff(uint8_t windowSize, uint8_t takeEveryNth, double rollThreshold, double motorSpeedThreshold) : rollWindow(windowSize), motorSpeedWindow(windowSize) {
+  StationaryCutoffMotorOutputFilter(uint8_t windowSize, uint8_t takeEveryNth, double rollThreshold, double motorSpeedThreshold) : rollWindow(windowSize), motorSpeedWindow(windowSize) {
     this->takeEveryNth = takeEveryNth;
     this->counter = 0;
     this->rollThreshold = rollThreshold;
@@ -29,10 +30,6 @@ public:
     counter++;
     if (counter % takeEveryNth == 0)
     {
-      // Serial.print("StationaryCutoff: Roll: ");
-      // Serial.print(roll, 4);
-      // Serial.print(", Speed: ");
-      // Serial.println(speed);
       counter = 0;
       rollWindow.consume(roll);
       motorSpeedWindow.consume(speed);
@@ -74,7 +71,7 @@ public:
 
   }
 
-  inline double filter(double value)
+  inline double filter(double value, MotorPosition motorPos) override
   {
     return value * multiplier;
   }

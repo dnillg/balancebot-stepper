@@ -14,12 +14,12 @@ class SetPIDSerialUnitSerializer : SerialUnitSerializer<SetPIDSerialUnit> {
         return SetPIDSerialUnit::class.java
     }
 
-    override fun serialize(unit: SerialUnit): String {
+    override fun serializeParams(unit: SerialUnit): String {
         unit as SetPIDSerialUnit
         return "${unit.type},${shortFloat(unit.p)},${shortFloat(unit.i)},${shortFloat(unit.d)}"
     }
 
-    override fun deserialize(line: String): SetPIDSerialUnit {
+    override fun deserializeParams(line: String): SetPIDSerialUnit {
         val parts = line.split(",")
         return SetPIDSerialUnit(PIDType.valueOf(parts[0]), parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat())
     }

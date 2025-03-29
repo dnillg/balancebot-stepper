@@ -13,12 +13,12 @@ class ControlSerialUnitSerializer : SerialUnitSerializer<ControlSerialUnit> {
         return ControlSerialUnit::class.java
     }
 
-    override fun serialize(unit: SerialUnit): String {
+    override fun serializeParams(unit: SerialUnit): String {
         unit as ControlSerialUnit
         return "${shortFloat(unit.speed)},${shortFloat(unit.steer)}"
     }
 
-    override fun deserialize(line: String): ControlSerialUnit {
+    override fun deserializeParams(line: String): ControlSerialUnit {
         val parts = line.split(",")
         return ControlSerialUnit(parts[0].toFloat(), parts[1].toFloat())
     }

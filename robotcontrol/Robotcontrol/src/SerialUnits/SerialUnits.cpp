@@ -13,7 +13,8 @@ const std::map<SerialUnitAlias, std::string> SerialUnitAliasMap = {
     {SETPID, "SETPID"},
     {MOTTOG, "MOTTOG"},
     {TRIG, "TRIG"},
-    {NOOP, "NOOP"}};
+    {NOOP, "NOOP"}
+  };
 
 const String DiagSerialUnit::LINE_PREFIX = "DIAG>";
 const String ControlSerialUnit::LINE_PREFIX = "CTRL>";
@@ -85,7 +86,7 @@ ISerialUnit *ControlSerialUnit::fromLine(String line)
     return new ParseErrorSerialUnit(line); // Invalid format
   }
   float spd, str;
-  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%f,%f", &spd, &str) == 2)
+  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%f,%f", &str, &spd) == 2)
   {
     return new ControlSerialUnit(spd, str);
   }
@@ -104,8 +105,8 @@ ISerialUnit *TriggerSerialUnit::fromLine(String line)
     return new ParseErrorSerialUnit(line); // Invalid format
   }
 
-  char type[50], userData[50];
-  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%49[^,],%49s", type, userData) == 2)
+  char type[50], userData[50] = {0};
+  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%49[^,],%49[^\n]", type, userData) >= 1)
   {
     return new TriggerSerialUnit(String(type), String(userData));
   }

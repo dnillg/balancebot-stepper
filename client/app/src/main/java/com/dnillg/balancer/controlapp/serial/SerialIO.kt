@@ -12,7 +12,7 @@ class SerialIO(
   fun send(serialUnit: SerialUnit) : String {
     for (serializer in serializers) {
       if (serializer.canSerialize(serialUnit)) {
-        return serializer.id() + ">" + serializer.serialize(serialUnit)
+        return serializer.id() + ">" + serializer.serializeParams(serialUnit)
       }
     }
     throw IllegalArgumentException("No serializer found for $serialUnit")
@@ -26,10 +26,14 @@ class SerialIO(
       }
       val id = parts[0]
       val data = parts[1]
-      for (serializer in serializers) {
-        if (serializer.id() == id) {
-          return serializer.deserialize(data)
+      try {
+        for (serializer in serializers) {
+          if (serializer.id() == id) {
+            return serializer.deserializeParams(data)
+          }
         }
+      } catch (e: Exception) {
+        Log.e(this.javaClass.simpleName, "Error while deserializing message: " + line, e)
       }
       return ErrorSerialUnit("No serializer found for $id")
     } catch (e: Exception) {

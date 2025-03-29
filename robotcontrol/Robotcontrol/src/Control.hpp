@@ -17,6 +17,7 @@ enum ControlMode
 class Control
 {
 private:
+  bool enabled = false;
   ControlMode mode = IDLE;
   ControlInput input;
   MotorOutput motorOutput;
@@ -40,6 +41,12 @@ private:
 
 public:
   Control();
+  void enable() {
+    this->enabled = true;
+  }
+  void disable() {
+    this->enabled = false;
+  }
   void setRollParams(double kp, double ki, double kd);
   void setRollSetpoint(double rollSetpoint);
   void setSpeedParams(double kp, double ki, double kd);

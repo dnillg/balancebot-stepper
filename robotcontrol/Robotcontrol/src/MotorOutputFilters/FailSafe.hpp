@@ -2,14 +2,16 @@
 #define FAILSAFE_H_
 
 #include <Arduino.h>
+#include "MotorPosition.hpp"
+#include "MotorOutputFilter.hpp"
 
-class FailSafe {
+class FailSafeMotorOutputFilter : public MotorOutputFilter {
     public:
-        FailSafe(uint16_t ms = 1000);
+        FailSafeMotorOutputFilter(uint16_t ms = 1000);
         void heartBeat();
         bool isAlive();
         void setThresholdMs(uint16_t ms);
-        uint64_t getCurrentMs();
+        double filter(double input, MotorPosition motorPos) override;
     private:
         uint16_t thresholdMs;
         suseconds_t lastHeartBeat;

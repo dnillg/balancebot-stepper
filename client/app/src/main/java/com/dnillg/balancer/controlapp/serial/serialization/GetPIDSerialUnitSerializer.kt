@@ -15,12 +15,12 @@ class GetPIDSerialUnitSerializer : SerialUnitSerializer<GetPIDSerialUnit> {
         return GetPIDSerialUnit::class.java
     }
 
-    override fun serialize(unit: SerialUnit): String {
+    override fun serializeParams(unit: SerialUnit): String {
         unit as GetPIDSerialUnit
         return unit.type.name
     }
 
-    override fun deserialize(line: String): GetPIDSerialUnit {
+    override fun deserializeParams(line: String): GetPIDSerialUnit {
         val parts = line.split(",")
         return GetPIDSerialUnit(PIDType.valueOf(parts[0]))
     }

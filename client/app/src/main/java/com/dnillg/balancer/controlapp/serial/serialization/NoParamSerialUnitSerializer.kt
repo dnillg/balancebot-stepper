@@ -5,10 +5,10 @@ import java.text.DecimalFormat
 
 interface NoParamSerialUnitSerializer<T : SerialUnit> : SerialUnitSerializer<T> {
 
-    override fun serialize(unit: SerialUnit): String {
+    override fun serializeParams(unit: SerialUnit): String {
         return ""
     }
-    override fun deserialize(line: String): T {
+    override fun deserializeParams(line: String): T {
         return unitClass().newInstance()
     }
 

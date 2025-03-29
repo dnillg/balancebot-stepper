@@ -11,13 +11,13 @@
 
 #include "DfConfig.h"
 #include "config.h"
-#include "SerialUnitRouter.hpp"
-#include "SerialUnitProcessor.hpp"
+#include "SerialUnits/SerialUnitProcessor.hpp"
 #include "Soul.hpp"
 #include "Listeners/SequenceTriggerListener.hpp"
 #include "esp_system.h"
 #include "esp_err.h"
 #include "BluetoothSentinel.hpp"
+//#include <WiFi.h>
 
 // ----------------------------------------------------------------------------
 // Function Declarations
@@ -39,7 +39,7 @@ struct GlobalState
 {
   HardwareSerial controlSerial;
   BluetoothSerial serialBT;
-  SerialUnitRouter router;
+
   SerialUnitProcessor serialUnitProcessor;
   EspSoftwareSerial::UART mp3Serial;
   TFT_eSPI tft;
@@ -51,14 +51,13 @@ struct GlobalState
   GlobalState()
       : controlSerial(2),
         serialBT(),
-        router(serialBT, controlSerial),
         serialUnitProcessor(),
         tft(TFT_eSPI(240, 240)),
         mp3Serial(PIN_MP3_SERIAL_RX, PIN_MP3_SERIAL_TX),
         display(tft),
         dfplayer(mp3Serial),
         soul(&dfplayer, &display),
-        btSentinel(serialBT, serialUnitProcessor, router)
+        btSentinel(serialBT, serialUnitProcessor, controlSerial)
   {
   }
 };
@@ -78,8 +77,9 @@ void setup()
 {
   setCpuFrequencyMhz(160);
   delay(10);
-  esp_log_level_set("*", ESP_LOG_INFO);  // Set log level for verbosity
+  // esp_log_level_set("*", ESP_LOG_INFO);  // Set log level for verbosity
   delay(10);
+  //WiFi.mode(WIFI_OFF);  
 
   gstate.controlSerial.begin(CONTROL_SERIAL_BAUD);
   Serial.begin(SERIAL_BAUD);
@@ -123,18 +123,18 @@ void setup()
       "bluetoothSerial",
       4096,
       NULL,
-      4,
+      6,
       NULL,
-      0);
+      1);
 
   xTaskCreatePinnedToCore(
       controlSerialReaderTask,
       "controlSerial",
       4096,
       NULL,
-      4,
+      6,
       NULL,
-      0);
+      1);
 
   xTaskCreatePinnedToCore(
       runnerTask,
@@ -172,7 +172,6 @@ void loop()
 void processSerialUnit(SerialUnitEndpoint source, String &line)
 {
   SerialUnitAlias alias = SerialUnitFactory::readAlias(line);
-  gstate.router.route(source, alias, line);
   gstate.serialUnitProcessor.process(alias, line);
 }
 
@@ -197,6 +196,7 @@ void bluetoothSerialReaderTask(void *pvParameters)
     {
       try {
         String line = gstate.serialBT.readStringUntil('\n');
+        gstate.controlSerial.println(line);
         processSerialUnit(BLUETOOTH, line);
         #if LOG_BT_REC == true
         Serial.print("BT-REC: ");
@@ -212,19 +212,15 @@ void bluetoothSerialReaderTask(void *pvParameters)
 
 void controlSerialReaderTask(void *pvParameters)
 {
+  uint8_t buffer[512];
   while (true)
   {
     while (gstate.controlSerial.available())
     {
-      String line = gstate.controlSerial.readStringUntil('\n');
-      processSerialUnit(CONTROL, line);
-
-      #if LOG_CT_REC == true
-      if (!line.startsWith("ALIVE>")) {
-        Serial.print("CT-REC: ");
-        Serial.println(line);
-      }
-      #endif
+      //String line = gstate.controlSerial.readStringUntil('\n');
+      //processSerialUnit(CONTROL, line);
+      gstate.controlSerial.readBytes(buffer, 512);
+      gstate.serialBT.write(buffer, 512);
     }
     vTaskDelay(portTICK_PERIOD_MS);
   }
@@ -234,8 +230,8 @@ void runnerTask(void *pvParameters)
 {
   while (true)
   {
-    gstate.soul.run();
     gstate.serialUnitProcessor.run();
+    gstate.soul.run();
     gstate.display.run();
     gstate.dfplayer.loop();
     taskYIELD(); // Does not delay, but allows other tasks to run

@@ -1,3 +1,5 @@
 package com.dnillg.balancer.controlapp.serial.model
 
-class MotorToggleSerialUnit : SerialUnit
+data class MotorToggleSerialUnit(
+  val enabled: Boolean = false
+) : SerialUnit

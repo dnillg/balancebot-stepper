@@ -1,6 +1,5 @@
 package com.dnillg.balancer.controlapp
 
-import HornSpeakerWithHandleSvgrepoCom
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -33,19 +32,13 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -124,10 +117,13 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     entryCreator = { timeSeries, value -> TimeSeriesChartEntry(timeSeries, value) },
   )
   private val sinusGenerators: MutableMap<String, SinusGenerator> = HashMap()
-
   private lateinit var lineChart: LineChart;
-  private lateinit var connectionStatus: MutableState<ConnectionStatus>;
-  private lateinit var pidValues: MutableState<PIDValues>;
+
+  // States
+  private lateinit var connectionStatus: MutableState<ConnectionStatus>
+  private lateinit var pidValues: MutableState<PIDValues>
+  private var motorsEnabled : MutableState<Boolean> = mutableStateOf(false)
+
   private var serialWorker: SerialWorker? = null
   private var btConnection: BtConnection? = null
   private var chartConfigIndex = 0;
@@ -345,11 +341,19 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     SidebarRow {
       //sinGeneratorButton()
       SimpleImageButton({ sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) }, painterResource(R.drawable.robot))
+      SimpleButton({
+        motorsEnabled.value = !motorsEnabled.value
+        sendUnit(MotorToggleSerialUnit(motorsEnabled.value))
+      }, if (motorsEnabled.value) Icons.Filled.Lock else Icons.Filled.Refresh)
     }
 
     Box(modifier = Modifier.fillMaxHeight()) {
       Joystick(modifier = Modifier.align(Alignment.Center), onMove = { x, y ->
-        serialWorker?.enqueueAndRemoveOthers(ControlSerialUnit(x, y))
+        if (x == 0f && y == 0f) {
+          sendUnit(ControlSerialUnit(0f, 0f))
+        } else {
+          serialWorker?.enqueueAndDebounce(ControlSerialUnit(x, y), "ControlSerialUnit", 50)
+        }
         Log.i(this::class.simpleName, "Joystick: $x, $y")
       })
     }
@@ -468,7 +472,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     serialWorker!!.subscribe(DiagDataSerialUnit::class.java) {
       CoroutineScope(Dispatchers.Default).launch {
         chartDataBacklog.add(it as DiagDataSerialUnit)
-        Log.i(this::class.simpleName, "Added to backlog:" + it.targetRoll)
       }
     }
     serialWorker!!.subscribe(GetPIDResponseSerialUnit::class.java) {

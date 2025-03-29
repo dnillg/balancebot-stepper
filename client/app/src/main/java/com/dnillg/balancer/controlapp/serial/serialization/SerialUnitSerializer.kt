@@ -11,8 +11,8 @@ interface SerialUnitSerializer<T : SerialUnit> {
         return unit::class.java == unitClass()
     }
 
-    fun serialize(unit: SerialUnit): String
-    fun deserialize(line: String): T
+    fun serializeParams(unit: SerialUnit): String
+    fun deserializeParams(line: String): T
 
     fun shortFloat(value: Float): String {
         return SHORT_FLOAT.format(value)

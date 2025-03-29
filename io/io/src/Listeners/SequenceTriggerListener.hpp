@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#include "SerialUnitProcessor.hpp"
+#include "../SerialUnits/SerialUnitProcessor.hpp"
 #include "Soul.hpp"
 
 class SequenceTriggerListener : public SerialUnitListener

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.ArrayList
+import java.util.LinkedList
 import java.util.UUID
 
 data class SerialWorkerListener(
@@ -27,6 +28,8 @@ class SerialWorker(
   private val listeners: MutableList<SerialWorkerListener> = ArrayList(),
   private val unitsToSend: MutableList<SerialUnit> = ArrayList(),
   private val mutex: Mutex = Mutex(),
+  private val receivedBacklog: LinkedList<String> = LinkedList(),
+  private val sendDebounceMap: MutableMap<String, Long> = HashMap<String, Long>(),
 ) : Runnable {
 
   private val taskScope = CoroutineScope(Dispatchers.Default + Job())
@@ -34,6 +37,9 @@ class SerialWorker(
   override fun run() {
     taskScope.launch {
       readRoutine()
+    }
+    taskScope.launch {
+      consumeBacklog()
     }
     taskScope.launch {
       writeRoutine()
@@ -61,7 +67,9 @@ class SerialWorker(
       mutex.withLock {
         unitsToSend.forEach {
           try {
-            btConnection.writeLine(serial.send(it))
+            val line = serial.send(it);
+            Log.i("SerialUnitThread", "Sending: $line")
+            btConnection.writeLine(line)
           } catch (e : Exception) {
             Log.e(this.javaClass .simpleName, "Could not write BT", e);
           }
@@ -75,14 +83,37 @@ class SerialWorker(
     while (!btConnection.isClosed) {
       val line = btConnection.readLine();
       if (line != null) {
-        val unit = serial.receive(line);
-        listeners.forEach {
-          if (it.clazz.isInstance(unit)) {
-            it.action.invoke(unit);
+        receivedBacklog.add(line);
+      } else {
+        delay(1)
+      }
+    }
+  }
+
+  private suspend fun consumeBacklog() {
+    while(!btConnection.isClosed) {
+      if (receivedBacklog.isEmpty()) {
+        delay(1)
+      }
+      try {
+        while (receivedBacklog.isNotEmpty()) {
+          if (receivedBacklog.size > 20) {
+            Log.w("SerialUnitThread", "Backlog is too big: ${receivedBacklog.size}")
+            receivedBacklog.clear()
+          }
+          val line = receivedBacklog.poll();
+          if (line != null) {
+            val unit = serial.receive(line);
+            //Log.i("SerialUnitThread", "Received: $unit")
+            listeners.forEach { listener ->
+              if (listener.clazz.isInstance(unit)) {
+                listener.action(unit)
+              }
+            }
           }
         }
-      } else {
-        delay(100)
+      } catch (exception : Exception) {
+        Log.e(this.javaClass.simpleName, "Error while reading line", exception)
       }
     }
   }
@@ -109,11 +140,15 @@ class SerialWorker(
     }
   }
 
-  fun enqueueAndRemoveOthers(unit: SerialUnit) {
+  fun enqueueAndDebounce(unit: SerialUnit, key: String, debounceTime: Long) {
     taskScope.launch {
+      if (sendDebounceMap.getOrDefault(key, 0L) + debounceTime > System.currentTimeMillis()) {
+        Log.i("SerialWorker", "Debouncing send for key: $key")
+        return@launch
+      }
       mutex.withLock {
-        unitsToSend.removeIf { it.javaClass == unit.javaClass }
-        unitsToSend.add(unit);
+        unitsToSend.add(unit)
+        sendDebounceMap[key] = System.currentTimeMillis()
       }
     }
   }

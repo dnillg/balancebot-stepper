@@ -2,6 +2,7 @@
 #include <AccelStepper.h>
 
 #include "config.h"
+#include "MotorPosition.hpp"
 
 #ifndef MOTOR_H_
 #define MOTOR_H_
@@ -26,6 +27,7 @@ enum Direction {
 class Motor
 {
 private:
+  MotorPosition position;
   void (*timerFunction)(void);
   hw_timer_t * stepTimer = NULL;
   uint8_t enablePin;
@@ -33,7 +35,7 @@ private:
 public:
   TMC5160Stepper driver; //TODO: private
   AccelStepper stepper;  //TODO: private
-  Motor(MotorPins pins, void (*timerFunction)(void), uint8_t timerIdx, Direction direction);
+  Motor(MotorPins pins, void (*timerFunction)(void), uint8_t timerIdx, Direction direction, MotorPosition motorPos);
   void init();
   void run() {
     stepper.runSpeed();

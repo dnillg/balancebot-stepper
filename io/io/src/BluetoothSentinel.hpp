@@ -4,17 +4,16 @@
 #include <Arduino.h>
 #include <BluetoothSerial.h>
 
-#include "SerialUnitProcessor.hpp"
-#include "SerialUnitRouter.hpp"
+#include "SerialUnits/SerialUnitProcessor.hpp"
 
 class BluetoothSentinel {
 private:
   bool btConnected = false;
   BluetoothSerial &serialBT;
   SerialUnitProcessor& serialUnitProcessor;
-  SerialUnitRouter& serialUnitRouter;
+  HardwareSerial& controlSerial;
 public:
-  BluetoothSentinel(BluetoothSerial &serialBT, SerialUnitProcessor& serialUnitProcessor, SerialUnitRouter& serialUnitRouter);
+  BluetoothSentinel(BluetoothSerial &serialBT, SerialUnitProcessor& serialUnitProcessor, HardwareSerial& controlSerial);
 
   void run();
 

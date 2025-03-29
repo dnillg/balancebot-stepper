@@ -14,12 +14,12 @@ class DiagDataSerializer : SerialUnitSerializer<DiagDataSerialUnit> {
       return DiagDataSerialUnit::class.java
     }
 
-    override fun serialize(unit: SerialUnit): String {
+    override fun serializeParams(unit: SerialUnit): String {
       unit as DiagDataSerialUnit
       return "${unit.seqNo},${shortFloat(unit.roll)},${shortFloat(unit.targetRoll)},${shortFloat(unit.speed)},${shortFloat(unit.targetSpeed)},${shortFloat(unit.motorLeft)},${shortFloat(unit.motorRight)}"
     }
 
-    override fun deserialize(line: String): DiagDataSerialUnit {
+    override fun deserializeParams(line: String): DiagDataSerialUnit {
       val parts = line.split(SEPARATOR)
       var i = 0;
       return DiagDataSerialUnit(

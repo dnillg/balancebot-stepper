@@ -1,8 +1,9 @@
 #include "Motor.hpp"
 
-Motor::Motor(MotorPins pins, void (*timerFunction)(void), uint8_t timerIdx, Direction direction): 
+Motor::Motor(MotorPins pins, void (*timerFunction)(void), uint8_t timerIdx, Direction direction, MotorPosition motorPos) : 
     driver(pins.cs, MOTOR_R_SENSE, pins.mosi, pins.miso, pins.sck), 
-    stepper(1, pins.stp, pins.dir)
+    stepper(1, pins.stp, pins.dir),
+    position(motorPos)
 {
     this->enablePin = pins.en;
     this->timerFunction = timerFunction;

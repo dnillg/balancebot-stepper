@@ -81,12 +81,13 @@ private fun PidBox(modifier: Modifier = Modifier, text: String) {
 @Composable
 fun SimpleButton(
   onClick: () -> Unit,
-  imageVector: ImageVector
+  imageVector: ImageVector,
+  toggled: Boolean = false,
 ) {
   IconButton(
     onClick = onClick,
     modifier = Modifier
-      .background(Color.LightGray, shape = CircleShape)
+      .background(if (toggled) Color.White else Color.LightGray, shape = CircleShape)
       .size(42.dp)
       .padding(4.dp)
   ) {

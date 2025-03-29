@@ -31,6 +31,9 @@ constexpr uint16_t millisPerCycle = 1000 / CONTROL_FREQUENCY;
 
 void Control::compute()
 {
+  if (!enabled) {
+    return;
+  }
   speedPID.Compute();
   this->rollSetpoint = speedPidOutputDampener.dampen(rollSetpoint, CONTROL_TARGET_ROLL - speedPIDOutput);
   rollPID.Compute();
