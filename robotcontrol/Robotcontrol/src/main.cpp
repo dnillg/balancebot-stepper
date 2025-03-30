@@ -242,9 +242,10 @@ void controlTask(void *pvParameters)
       #if IO_SERIAL_ENABLED == true
       if (cycleNo % 10 == 0) {
         // 5ms * 5 = 25ms
-        auto line = DiagSerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint(), gstate.speedAgg500.getSpeed(), 0.0, step16SpeedLeft, step16SpeedRight, 0.0, 0.0).toString();
-        gstate.ioSerial.println(line);
-        gstate.ioSerial.flush();
+        //auto line = DiagSerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint(), gstate.speedAgg500.getSpeed(), 0.0, step16SpeedLeft, step16SpeedRight, 0.0, 0.0).toString();
+        auto line2 = DG1SerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint()).toString();
+        gstate.ioSerial.println(line2);
+        //gstate.ioSerial.flush();
       }
       #endif
       gstate.leftMotor.setSpeed(gstate.motorOutputFilterChain.filter(step16SpeedLeft, LEFT)); 

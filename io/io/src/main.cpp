@@ -212,15 +212,15 @@ void bluetoothSerialReaderTask(void *pvParameters)
 
 void controlSerialReaderTask(void *pvParameters)
 {
-  uint8_t buffer[512];
+  uint8_t buffer[64];
   while (true)
   {
     while (gstate.controlSerial.available())
     {
       //String line = gstate.controlSerial.readStringUntil('\n');
       //processSerialUnit(CONTROL, line);
-      gstate.controlSerial.readBytes(buffer, 512);
-      gstate.serialBT.write(buffer, 512);
+      size_t read = gstate.controlSerial.readBytes(buffer, 64);
+      gstate.serialBT.write(buffer, read);
     }
     vTaskDelay(portTICK_PERIOD_MS);
   }

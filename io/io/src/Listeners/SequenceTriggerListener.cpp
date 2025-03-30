@@ -53,6 +53,27 @@ void SequenceTriggerListener::consume(ISerialUnit *unit)
     }
     if (triggerUnit.getType() == "COCONUT")
     {
-        // soul.setSequence(SequenceType::COCONUT);
+        soul->setSequence(SequenceType::COCONUT);
     }
+    if (triggerUnit.getType() == "NYAN")
+    {
+        soul->setSequence(SequenceType::NYAN);
+    }
+    if (triggerUnit.getType() == "TROLOLO")
+    {
+        soul->setSequence(SequenceType::TROLOLO);
+    }
+    if (triggerUnit.getType() == "MINECRAFT")
+    {
+        soul->setSequence(SequenceType::MINECRAFT);
+    }
+    if (triggerUnit.getType() == "CSIPKES")
+    {
+        soul->setSequence(SequenceType::CSIPKES);
+    }
+    if (triggerUnit.getType() == "TARKOV")
+    {
+        soul->setSequence(SequenceType::TARKOV);
+    }
+
 }

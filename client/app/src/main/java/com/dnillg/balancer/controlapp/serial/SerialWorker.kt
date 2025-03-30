@@ -9,6 +9,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.ArrayList
@@ -27,15 +28,17 @@ class SerialWorker(
   private val serial: SerialIO,
   private val listeners: MutableList<SerialWorkerListener> = ArrayList(),
   private val unitsToSend: MutableList<SerialUnit> = ArrayList(),
-  private val mutex: Mutex = Mutex(),
+  private val sendMutex: Mutex = Mutex(),
+  private val receiveMutex: Mutex = Mutex(),
   private val receivedBacklog: LinkedList<String> = LinkedList(),
   private val sendDebounceMap: MutableMap<String, Long> = HashMap<String, Long>(),
 ) : Runnable {
 
   private val taskScope = CoroutineScope(Dispatchers.Default + Job())
+  private val readerScope = CoroutineScope(newSingleThreadContext("BtReader"))
 
   override fun run() {
-    taskScope.launch {
+    readerScope.launch {
       readRoutine()
     }
     taskScope.launch {
@@ -64,7 +67,7 @@ class SerialWorker(
 
   private suspend fun writeRoutine() {
     while (!btConnection.isClosed) {
-      mutex.withLock {
+      sendMutex.withLock {
         unitsToSend.forEach {
           try {
             val line = serial.send(it);
@@ -83,7 +86,9 @@ class SerialWorker(
     while (!btConnection.isClosed) {
       val line = btConnection.readLine();
       if (line != null) {
-        receivedBacklog.add(line);
+        receiveMutex.withLock {
+          receivedBacklog.add(line);
+        }
       } else {
         delay(1)
       }
@@ -91,19 +96,23 @@ class SerialWorker(
   }
 
   private suspend fun consumeBacklog() {
+    var i = 0L
     while(!btConnection.isClosed) {
       if (receivedBacklog.isEmpty()) {
         delay(1)
       }
       try {
         while (receivedBacklog.isNotEmpty()) {
-          if (receivedBacklog.size > 20) {
-            Log.w("SerialUnitThread", "Backlog is too big: ${receivedBacklog.size}")
-            receivedBacklog.clear()
+          i++;
+          if (i % 100 == 0L) {
+            Log.i("SerialUnitThread", "Backlog size: ${receivedBacklog.size}")
           }
-          val line = receivedBacklog.poll();
+          var line : String? = null;
+          receiveMutex.withLock {
+            line = receivedBacklog.poll();
+          }
           if (line != null) {
-            val unit = serial.receive(line);
+            val unit = serial.receive(line!!);
             //Log.i("SerialUnitThread", "Received: $unit")
             listeners.forEach { listener ->
               if (listener.clazz.isInstance(unit)) {
@@ -130,11 +139,12 @@ class SerialWorker(
 
   fun stop() {
     taskScope.cancel();
+    readerScope.cancel();
   }
 
   fun enqueue(unit: SerialUnit) {
     taskScope.launch {
-      mutex.withLock {
+      sendMutex.withLock {
         unitsToSend.add(unit);
       }
     }
@@ -146,7 +156,7 @@ class SerialWorker(
         Log.i("SerialWorker", "Debouncing send for key: $key")
         return@launch
       }
-      mutex.withLock {
+      sendMutex.withLock {
         unitsToSend.add(unit)
         sendDebounceMap[key] = System.currentTimeMillis()
       }

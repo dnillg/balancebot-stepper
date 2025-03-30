@@ -77,6 +77,7 @@ import com.dnillg.balancer.controlapp.domain.model.PIDValues
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.DG1SerialUnit
 import com.dnillg.balancer.controlapp.serial.model.DiagDataSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDResponseSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDSerialUnit
@@ -429,6 +430,17 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.PEDRO_4X)) }, painterResource(R.drawable.pedro))
             SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.RICK_ROLL)) }, painterResource(R.drawable.rickrolld))
             SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) }, painterResource(R.drawable.robot))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.NYAN)) }, painterResource(R.drawable.rickrolld))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.MINECRAFT)) }, painterResource(R.drawable.rickrolld))
+          }
+
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+          ) {
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.TARKOV)) }, painterResource(R.drawable.rickrolld))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CSIPKES)) }, painterResource(R.drawable.rickrolld))
+            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.TROLOLO)) }, painterResource(R.drawable.rickrolld))
           }
 
         }
@@ -472,6 +484,12 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     serialWorker!!.subscribe(DiagDataSerialUnit::class.java) {
       CoroutineScope(Dispatchers.Default).launch {
         chartDataBacklog.add(it as DiagDataSerialUnit)
+      }
+    }
+    serialWorker!!.subscribe(DG1SerialUnit::class.java) {
+      CoroutineScope(Dispatchers.Default).launch {
+        val dg1 = it as DG1SerialUnit
+        chartDataBacklog.add(DiagDataSerialUnit(dg1.seqNo, dg1.roll, dg1.targetRoll, 0.0f, 0.0f, 0.0f, 0.0f))
       }
     }
     serialWorker!!.subscribe(GetPIDResponseSerialUnit::class.java) {

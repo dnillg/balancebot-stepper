@@ -11,7 +11,12 @@ enum class TriggerType {
   ROBOT_FACE_STANDARD,
   OIIUU_CAT,
   ZLAD,
-  COCONUT
+  COCONUT,
+  NYAN,
+  TROLOLO,
+  MINECRAFT,
+  CSIPKES,
+  TARKOV
 }
 
 class TriggerSerialUnit (

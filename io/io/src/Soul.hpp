@@ -22,20 +22,25 @@ enum SequenceType
   ROBOT_FACE_STANDARD,
   OIIUU_CAT,
   ZLAD,
-  COCONUT
+  COCONUT,
+  NYAN,
+  TROLOLO,
+  MINECRAFT,
+  CSIPKES,
+  TARKOV
 };
 
 class SequenceConfiguration {
   private:
     SequenceType sequence;
-    uint16_t volume;
+    uint8_t volume;
     int16_t length;
     SequenceType nextSequence;
   public:
-    SequenceConfiguration(SequenceType sequence, int16_t length, uint16_t volume, SequenceType nextSequence)
+    SequenceConfiguration(SequenceType sequence, int16_t length, uint8_t volume, SequenceType nextSequence)
       : sequence(sequence), volume(volume), length(length), nextSequence(nextSequence) {}
     SequenceType getSequence() { return sequence; }
-    uint16_t getVolume() { return volume; }
+    uint8_t getVolume() { return volume; }
     int16_t getLength() { return length; }
     SequenceType getNextSequence() { return nextSequence; }
 };

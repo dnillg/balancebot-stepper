@@ -95,6 +95,22 @@ public:
   float getSpeedInput() { return speedInput; }
 };
 
+class DG1SerialUnit : public ISerialUnit
+{
+private:
+  uint16_t sequenceNumber;
+  float currentRoll, targetRoll;
+public:
+  static const String LINE_PREFIX;
+  DG1SerialUnit(uint16_t, float, float);
+  SerialUnitAlias getAlias() override;
+  String toString() override;
+  static ISerialUnit *fromLine(String line);
+  uint16_t getSequenceNumber() { return sequenceNumber; }
+  float getCurrentRoll() { return currentRoll; }
+  float getTargetRoll() { return targetRoll; }
+};
+
 class ControlSerialUnit : public ISerialUnit
 {
 private:
