@@ -209,9 +209,9 @@ void ioSerialReadTask(void *pvParameters)
   {
     if (gstate.ioSerial.available()) {
       String input = gstate.ioSerial.readStringUntil('\n');
-      Serial.print("REC-IO: ");
-      Serial.println(input);
-      //gstate.serialUnitProcessor.process(SerialUnitFactory::readAlias(input), input);
+      // Serial.print("REC-IO: ");
+      // Serial.println(input);
+      gstate.serialUnitProcessor.process(SerialUnitFactory::readAlias(input), input);
     }
     vTaskDelay(portTICK_PERIOD_MS);
   }
@@ -220,11 +220,10 @@ void ioSerialReadTask(void *pvParameters)
 void controlTask(void *pvParameters)
 {
   const TickType_t xFrequency = pdMS_TO_TICKS(1000 / CONTROL_FREQUENCY); // 5 ms = 200 Hz
-  gstate.serialUnitProcessor.run();
   while (true)
   {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-
+    gstate.serialUnitProcessor.run();
     if (gstate.initialized)
     {
       gstate.imu.getData();
@@ -240,16 +239,19 @@ void controlTask(void *pvParameters)
       int16_t step16SpeedRight = gstate.control.getSteps16Right();
       uint16_t cycleNo = gstate.control.getCycleNo();
       #if IO_SERIAL_ENABLED == true
-      if (cycleNo % 10 == 0) {
-        // 5ms * 5 = 25ms
+      if (cycleNo % 2 == 0) {
+        // 5ms * 2 = 10ms
         //auto line = DiagSerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint(), gstate.speedAgg500.getSpeed(), 0.0, step16SpeedLeft, step16SpeedRight, 0.0, 0.0).toString();
         auto line2 = DG1SerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint()).toString();
         gstate.ioSerial.println(line2);
-        //gstate.ioSerial.flush();
       }
       #endif
-      gstate.leftMotor.setSpeed(gstate.motorOutputFilterChain.filter(step16SpeedLeft, LEFT)); 
-      gstate.rightMotor.setSpeed(gstate.motorOutputFilterChain.filter(step16SpeedRight, RIGHT));
+      //Serial.print("Step16: "); Serial.print(step16SpeedLeft); Serial.print(", "); Serial.println(step16SpeedRight);
+      auto filteredStep16SpeedLeft = (uint16_t) gstate.motorOutputFilterChain.filter(step16SpeedLeft, LEFT);
+      auto filteredStep16SpeedRight = (uint16_t) gstate.motorOutputFilterChain.filter(step16SpeedRight, RIGHT);
+      //Serial.print("Filtered: "); Serial.print(filteredStep16SpeedLeft); Serial.print(", "); Serial.println(filteredStep16SpeedRight);
+      gstate.leftMotor.setSpeed(filteredStep16SpeedLeft); 
+      gstate.rightMotor.setSpeed(filteredStep16SpeedRight);
 
       int16_t controllSpeed = (((int32_t)step16SpeedLeft) + step16SpeedRight) / 2;
       gstate.stationaryCutoff.consumeRollAndMotorSpeed(currentRoll, controllSpeed);
@@ -258,6 +260,9 @@ void controlTask(void *pvParameters)
 
       gstate.failSafe.heartBeat();
     }
+    // #if IO_SERIAL_ENABLED == true
+    // gstate.ioSerial.flush();
+    // #endif
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

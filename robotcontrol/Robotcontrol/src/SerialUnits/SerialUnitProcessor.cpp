@@ -12,8 +12,8 @@ void SerialUnitProcessor::process(const SerialUnitAlias alias, const String &lin
   }
   else
   {
-    ISerialUnit *unit = SerialUnitFactory::fromLine(line);
-    backlog.push_back(unit);
+  ISerialUnit *unit = SerialUnitFactory::fromLine(line);
+  backlog.push_back(unit);
   }
 }
 

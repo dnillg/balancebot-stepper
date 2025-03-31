@@ -18,6 +18,7 @@ class Control
 {
 private:
   bool enabled = false;
+  bool resetFlag = false;
   ControlMode mode = IDLE;
   ControlInput input;
   MotorOutput motorOutput;
@@ -46,6 +47,9 @@ public:
   }
   void disable() {
     this->enabled = false;
+  }
+  void reset() {
+    this->resetFlag = true;
   }
   void setRollParams(double kp, double ki, double kd);
   void setRollSetpoint(double rollSetpoint);

@@ -109,12 +109,15 @@ ISerialUnit *ControlSerialUnit::fromLine(String line)
   {
     return new ParseErrorSerialUnit(line); // Invalid format
   }
-  float spd, str;
-  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%f,%f", &spd, &str) == 2)
-  {
+  try {
+    line.indexOf(',');
+    auto spd = line.substring(line.indexOf(',') + 1).toFloat();
+    auto str = line.substring(0, line.indexOf(',')).toFloat();  
     return new ControlSerialUnit(spd, str);
+  } catch (const std::exception &e) {
+    Serial.println("Error parsing ControlSerialUnit: " + String(e.what()));
+    return new ParseErrorSerialUnit(line);
   }
-  return new ParseErrorSerialUnit(line);
 }
 
 // Trigger Serial Unit

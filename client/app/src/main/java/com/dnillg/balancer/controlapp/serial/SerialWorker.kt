@@ -153,7 +153,7 @@ class SerialWorker(
   fun enqueueAndDebounce(unit: SerialUnit, key: String, debounceTime: Long) {
     taskScope.launch {
       if (sendDebounceMap.getOrDefault(key, 0L) + debounceTime > System.currentTimeMillis()) {
-        Log.i("SerialWorker", "Debouncing send for key: $key")
+        //Log.i("SerialWorker", "Debouncing send for key: $key")
         return@launch
       }
       sendMutex.withLock {

@@ -34,6 +34,12 @@ void Control::compute()
   if (!enabled) {
     return;
   }
+  if (resetFlag) {
+    rollPID.resetOutputSum();
+    speedPID.resetOutputSum();
+    resetFlag = false;
+  }
+  
   speedPID.Compute();
   this->rollSetpoint = speedPidOutputDampener.dampen(rollSetpoint, CONTROL_TARGET_ROLL - speedPIDOutput);
   rollPID.Compute();

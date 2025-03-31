@@ -20,6 +20,7 @@ public:
       auto ctrlSerialUnit = static_cast<MotorToggleSerialUnit *>(unit);
       if (ctrlSerialUnit->getState() == 1)
       {
+        this->control->reset();
         this->control->enable();
         this->motors->enable();
         Serial.println("Motors and Control enabled.");

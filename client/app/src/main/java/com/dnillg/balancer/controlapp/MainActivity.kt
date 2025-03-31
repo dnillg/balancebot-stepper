@@ -351,11 +351,12 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     Box(modifier = Modifier.fillMaxHeight()) {
       Joystick(modifier = Modifier.align(Alignment.Center), onMove = { x, y ->
         if (x == 0f && y == 0f) {
+          // Sending twice to ensure the zero value is sent without a transmission error
+          sendUnit(ControlSerialUnit(0f, 0f))
           sendUnit(ControlSerialUnit(0f, 0f))
         } else {
-          serialWorker?.enqueueAndDebounce(ControlSerialUnit(x, y), "ControlSerialUnit", 50)
+          serialWorker?.enqueueAndDebounce(ControlSerialUnit(x, y), "ControlSerialUnit", 66)
         }
-        Log.i(this::class.simpleName, "Joystick: $x, $y")
       })
     }
   }

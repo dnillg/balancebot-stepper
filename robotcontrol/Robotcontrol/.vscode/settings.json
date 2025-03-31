@@ -14,7 +14,8 @@
         "numeric": "cpp",
         "streambuf": "cpp",
         "functional": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "optional": "cpp"
     },
     "editor.tabSize": 2,
     "editor.insertSpaces": true

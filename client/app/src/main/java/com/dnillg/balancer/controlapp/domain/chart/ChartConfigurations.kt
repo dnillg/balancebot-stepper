@@ -26,8 +26,8 @@ data class ChartConfiguration(
 
 val rollChartConfiguration = ChartConfiguration(
   title = "Roll",
-  minimumValue = -200f,
-  maximumValue = 200f,
+  minimumValue = -90f,
+  maximumValue = 90f,
   activeSeries = listOf(TimeSeriesType.ROLL, TimeSeriesType.TARGET_ROLL)
 )
 
