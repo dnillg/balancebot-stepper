@@ -51,10 +51,10 @@ void Control::compute()
   {
     cycleNo = 0;
   }
-  millis += 1000 / CONTROL_FREQUENCY;
+  millis += millisPerCycle;
   if (millis >= 1000)
   {
-    millis = millisPerCycle;
+    millis -= 1000;
   }
 }
 

@@ -27,7 +27,8 @@ enum SequenceType
   TROLOLO,
   MINECRAFT,
   CSIPKES,
-  TARKOV
+  TARKOV,
+  WINXP_START
 };
 
 class SequenceConfiguration {

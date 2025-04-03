@@ -8,15 +8,16 @@ const std::map<SequenceType, SequenceConfiguration*> SequenceConfigurationMap = 
     {PEDRO_2X, new SequenceConfiguration(PEDRO_2X, 26, 15u, ROBOT_FACE_STANDARD)},
     {PEDRO_4X, new SequenceConfiguration(PEDRO_4X, 26, 15u, ROBOT_FACE_STANDARD)},
     {RICK_ROLL, new SequenceConfiguration(RICK_ROLL, 212, 15u, ROBOT_FACE_STANDARD)},
-    {ROBOT_FACE_STANDARD, new SequenceConfiguration(ROBOT_FACE_STANDARD, 20, 0, ROBOT_FACE_STANDARD)},
+    {ROBOT_FACE_STANDARD, new SequenceConfiguration(ROBOT_FACE_STANDARD, 32000, 0, ROBOT_FACE_STANDARD)},
     {OIIUU_CAT, new SequenceConfiguration(OIIUU_CAT, 105, 15u, ROBOT_FACE_STANDARD)},
     {ZLAD, new SequenceConfiguration(ZLAD, 180, 15u, ROBOT_FACE_STANDARD)},
     {COCONUT, new SequenceConfiguration(COCONUT, 213, 15u, ROBOT_FACE_STANDARD)},
     {NYAN, new SequenceConfiguration(NYAN, 215, 15u, ROBOT_FACE_STANDARD)},
     {TROLOLO, new SequenceConfiguration(TROLOLO, 160, 20u, ROBOT_FACE_STANDARD)},  
     {MINECRAFT, new SequenceConfiguration(MINECRAFT, 210, 30u, ROBOT_FACE_STANDARD)},
-    {CSIPKES, new SequenceConfiguration(CSIPKES, 20, 58u, ROBOT_FACE_STANDARD)},
-    {TARKOV, new SequenceConfiguration(TARKOV, 20, 60, ROBOT_FACE_STANDARD)},
+    {CSIPKES, new SequenceConfiguration(CSIPKES, 20, 25u, ROBOT_FACE_STANDARD)},
+    {TARKOV, new SequenceConfiguration(TARKOV, 20, 25u, ROBOT_FACE_STANDARD)},
+    {WINXP_START, new SequenceConfiguration(WINXP_START, 4, 15u, ROBOT_FACE_STANDARD)},
 };
 
 Soul::Soul(DfMp3 *df, RobotDisplay *display)

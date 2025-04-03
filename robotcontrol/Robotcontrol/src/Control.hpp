@@ -14,6 +14,8 @@ enum ControlMode
   IDLE
 };
 
+constexpr double MAX_TARGET_SPEED = CONTROL_MAX_STEP16_SPEED / 3.0;
+
 class Control
 {
 private:
@@ -39,6 +41,15 @@ private:
   }
   uint16_t cycleNo = 0;
   uint16_t millis = 0;
+  double threshold(double value, double threshold) {
+    if (value >= threshold) {
+      return value;
+    }
+    if (value <= -threshold) {
+      return value;
+    }
+    return 0;
+  }
 
 public:
   Control();
@@ -58,8 +69,11 @@ public:
   {
     this->input.targetSpeedProportion = speed;
     this->input.steerProportion = steer;
-    this->input.step16SpeedSetpoint = speed * CONTROL_MAX_STEP16_SPEED;
-    this->input.steerOffset = steer * CONTROL_MAX_STEER_STEP16_OFFSET;
+    this->input.step16SpeedSetpoint = speed * MAX_TARGET_SPEED;
+    this->input.steerOffset = threshold(steer * CONTROL_MAX_STEER_STEP16_OFFSET, 250);
+  }
+  const ControlInput& getInput() const {
+    return input;
   }
   void setInputAngleRad(double angle);
   void setInputSpeedAvg250(double speed);

@@ -239,30 +239,42 @@ void controlTask(void *pvParameters)
       int16_t step16SpeedRight = gstate.control.getSteps16Right();
       uint16_t cycleNo = gstate.control.getCycleNo();
       #if IO_SERIAL_ENABLED == true
-      if (cycleNo % 2 == 0) {
-        // 5ms * 2 = 10ms
+      if (cycleNo % 8 == 0) {
+        // 5ms * 8 = 40ms
         //auto line = DiagSerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint(), gstate.speedAgg500.getSpeed(), 0.0, step16SpeedLeft, step16SpeedRight, 0.0, 0.0).toString();
-        auto line2 = DG1SerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint()).toString();
-        gstate.ioSerial.println(line2);
+        // auto line2 = DG1SerialUnit(gstate.control.getMillis(), currentRoll, gstate.control.getRollSetpoint()).toString();
+        // gstate.ioSerial.println(line2);
       }
       #endif
-      //Serial.print("Step16: "); Serial.print(step16SpeedLeft); Serial.print(", "); Serial.println(step16SpeedRight);
-      auto filteredStep16SpeedLeft = (uint16_t) gstate.motorOutputFilterChain.filter(step16SpeedLeft, LEFT);
-      auto filteredStep16SpeedRight = (uint16_t) gstate.motorOutputFilterChain.filter(step16SpeedRight, RIGHT);
-      //Serial.print("Filtered: "); Serial.print(filteredStep16SpeedLeft); Serial.print(", "); Serial.println(filteredStep16SpeedRight);
-      gstate.leftMotor.setSpeed(filteredStep16SpeedLeft); 
-      gstate.rightMotor.setSpeed(filteredStep16SpeedRight);
+      int16_t filteredStep16SpeedLeft = gstate.motorOutputFilterChain.filter(step16SpeedLeft, LEFT);
+      int16_t filteredStep16SpeedRight = gstate.motorOutputFilterChain.filter(step16SpeedRight, RIGHT);
+      gstate.leftMotor.setSpeed(-filteredStep16SpeedLeft); 
+      gstate.rightMotor.setSpeed(-filteredStep16SpeedRight);
 
-      int16_t controllSpeed = (((int32_t)step16SpeedLeft) + step16SpeedRight) / 2;
-      gstate.stationaryCutoff.consumeRollAndMotorSpeed(currentRoll, controllSpeed);
-      gstate.speedAgg500.consume(controllSpeed);
-      gstate.speedAgg250.consume(controllSpeed);
+      if (false && cycleNo % 10 == 0) {
+        Serial.print("ROLL: ");
+        Serial.print(currentRoll, 4);
+        Serial.print(", SPDSP: ");
+        Serial.print(gstate.control.getInput().step16SpeedSetpoint);
+        Serial.print(", RSP: ");
+        Serial.print(gstate.control.getRollSetpoint());
+        Serial.print(", L: ");
+        Serial.print(filteredStep16SpeedLeft);
+        Serial.print(", R:");
+        Serial.print(filteredStep16SpeedRight);
+        Serial.print(", STRPROP: ");
+        Serial.print(gstate.control.getInput().steerProportion);
+        Serial.print(", STROFF: ");
+        Serial.println(gstate.control.getInput().steerOffset);
+      }
+
+      int16_t controlSpeed = (((int32_t)step16SpeedLeft) + step16SpeedRight) / 2;
+      gstate.stationaryCutoff.consumeRollAndMotorSpeed(currentRoll, controlSpeed);
+      gstate.speedAgg500.consume(controlSpeed);
+      gstate.speedAgg250.consume(controlSpeed);
 
       gstate.failSafe.heartBeat();
     }
-    // #if IO_SERIAL_ENABLED == true
-    // gstate.ioSerial.flush();
-    // #endif
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

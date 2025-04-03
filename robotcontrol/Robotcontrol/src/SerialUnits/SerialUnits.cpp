@@ -110,9 +110,16 @@ ISerialUnit *ControlSerialUnit::fromLine(String line)
     return new ParseErrorSerialUnit(line); // Invalid format
   }
   try {
-    line.indexOf(',');
-    auto spd = line.substring(line.indexOf(',') + 1).toFloat();
-    auto str = line.substring(0, line.indexOf(',')).toFloat();  
+    String nonPrefixLine = line.substring(LINE_PREFIX.length());
+    Serial.println(line);
+    Serial.println(nonPrefixLine);
+    int index = nonPrefixLine.indexOf(',');
+    if (index == -1) {
+      return new ParseErrorSerialUnit(line);
+    }
+    auto spd = nonPrefixLine.substring(index + 1).toFloat();
+    auto str = nonPrefixLine.substring(0, index).toFloat();  
+    Serial.println("" + String(spd) + ";" + String(str));
     return new ControlSerialUnit(spd, str);
   } catch (const std::exception &e) {
     Serial.println("Error parsing ControlSerialUnit: " + String(e.what()));

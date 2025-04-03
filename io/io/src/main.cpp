@@ -116,7 +116,7 @@ void setup()
   gstate.tft.setSwapBytes(true);
 
   gstate.serialUnitProcessor.addListener(new SequenceTriggerListener(&gstate.soul));
-  gstate.soul.setSequence(SequenceType::ROBOT_FACE_STANDARD);
+  gstate.soul.setSequence(SequenceType::WINXP_START);
 
   xTaskCreatePinnedToCore(
       bluetoothSerialReaderTask,
