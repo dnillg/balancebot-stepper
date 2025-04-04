@@ -43,8 +43,9 @@
 // ----------------------------------------------------------------------------
 // BALANANCE CONTROL
 // ----------------------------------------------------------------------------
-#define FAILSAFE_ENABLED false
+#define FAILSAFE_ENABLED true
 #define FAILSAFE_THRESHOLD_MS 100
+#define FAILSAFE_MAX_ROLL_OFFSET 0.9
 
 #define CONTROL_DRY_RUN false
 #define CONTROL_TASK_ENABLED true

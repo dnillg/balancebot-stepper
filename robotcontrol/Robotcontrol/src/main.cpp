@@ -15,7 +15,6 @@
 #include "MotorOutputFilters/MotorOutputFilter.hpp"
 #include "MotorOutputFilters/FailSafe.hpp"
 #include "MotorOutputFilters/StationaryCutoff.hpp"
-#include "MotorOutputFilters/SteeringMotorOutputFilter.hpp"
 #include "SerialUnits/SerialUnits.hpp"
 #include "MotorPosition.hpp"
 #include "Motors.hpp"
@@ -61,9 +60,8 @@ struct GlobalState
   DiagSender diagSender = DiagSender(&ioSerial);
   FailSafeMotorOutputFilter failSafe = FailSafeMotorOutputFilter(FAILSAFE_THRESHOLD_MS);
   StationaryCutoffMotorOutputFilter stationaryCutoff = StationaryCutoffMotorOutputFilter(20, 20, STATIONARY_CUTOFF_ROLL_RANGE, STATIONARY_CUTOFF_SPEED_RANGE);
-  SteeringMotorOutputFilter steeringMotorOutputFilter = SteeringMotorOutputFilter(REMOTE_MAX_STEERING_OFFSET);
   MotorOutputFilterChain motorOutputFilterChain = MotorOutputFilterChain();
-  RemoteControlListener remoteControlListener = RemoteControlListener(&control, &steeringMotorOutputFilter);
+  RemoteControlListener remoteControlListener = RemoteControlListener(&control);
   ControlToggleListener controlToggleListener = ControlToggleListener(&control, &motors);
   SerialUnitProcessor serialUnitProcessor = SerialUnitProcessor();
   DiagTriggerListener diagTriggerListener = DiagTriggerListener(&diagSender);
@@ -213,7 +211,8 @@ void controlTask(void *pvParameters)
     {
       gstate.imu.getData();
       float currentRoll = gstate.imu.getRoll();
-
+      
+      gstate.failSafe.setRoll(currentRoll);
       gstate.control.setInputAngleRad(currentRoll);
       gstate.control.setInputSpeedAvg250(gstate.speedAgg250.getSpeed());
       gstate.control.setInputSpeedAvg500(gstate.speedAgg500.getSpeed());
