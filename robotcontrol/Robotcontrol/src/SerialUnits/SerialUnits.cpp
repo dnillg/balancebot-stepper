@@ -18,6 +18,7 @@ const std::map<SerialUnitAlias, std::string> SerialUnitAliasMap = {
 
 const String DiagSerialUnit::LINE_PREFIX = "DIAG>";
 const String DG1SerialUnit::LINE_PREFIX = "DG1>";
+const String DG2SerialUnit::LINE_PREFIX = "DG2>";
 const String ControlSerialUnit::LINE_PREFIX = "CTRL>";
 const String TriggerSerialUnit::LINE_PREFIX = "TRIG>";
 const String GetPidSerialUnit::LINE_PREFIX = "GETPID>";
@@ -84,18 +85,21 @@ String DG1SerialUnit::toString()
 }
 ISerialUnit *DG1SerialUnit::fromLine(String line)
 {
-  if (!line.startsWith(LINE_PREFIX))
-  {
-    return new ParseErrorSerialUnit(line); // Invalid format
-  }
+  // Not implemented
+  return new ParseErrorSerialUnit(line);
+}
 
-  uint16_t sequenceNumber;
-  float cr, tr;
-  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%d,%f,%f", &sequenceNumber, &cr, &tr) == 3)
-  {
-    return new DG1SerialUnit(sequenceNumber, cr, tr);
-  }
-  return new ParseErrorSerialUnit(line); // Parsing failed
+// DG2 Serial Unit
+DG2SerialUnit::DG2SerialUnit(uint16_t sqn, float cs, float ts) : sequenceNumber(sqn), speed(cs), targetSpeed(ts) {}
+SerialUnitAlias DG2SerialUnit::getAlias() { return DG2; }
+String DG1SerialUnit::toString()
+{
+  return LINE_PREFIX + String(sequenceNumber) + "," + String(currentRoll, 3) + "," + String(targetRoll, 3);
+}
+ISerialUnit *DG1SerialUnit::fromLine(String line)
+{
+  // Not implemented
+  return new ParseErrorSerialUnit(line);
 }
 
 // Control Serial Unit

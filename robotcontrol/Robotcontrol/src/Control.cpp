@@ -15,13 +15,13 @@ Control::Control()
   speedPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
 }
 
-void Control::setRollParams(double kp, double ki, double kd)
+void Control::setRollPidParams(double kp, double ki, double kd)
 {
   rollPID.SetTunings(kp, ki, kd);
   rollPID.resetOutputSum();
 }
 
-void Control::setSpeedParams(double kp, double ki, double kd)
+void Control::setSpeedPidParams(double kp, double ki, double kd)
 {
   speedPID.SetTunings(kp, ki, kd);
   speedPID.resetOutputSum();

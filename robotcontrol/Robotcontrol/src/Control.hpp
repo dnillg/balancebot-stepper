@@ -14,6 +14,13 @@ enum ControlMode
   IDLE
 };
 
+struct PidParams
+{
+  double kp;
+  double ki;
+  double kd;
+};
+
 constexpr double MAX_TARGET_SPEED = CONTROL_MAX_STEP16_SPEED / 3.0;
 
 class Control
@@ -62,9 +69,29 @@ public:
   void reset() {
     this->resetFlag = true;
   }
-  void setRollParams(double kp, double ki, double kd);
+  void setRollPidParams(double kp, double ki, double kd);
   void setRollSetpoint(double rollSetpoint);
-  void setSpeedParams(double kp, double ki, double kd);
+  void setSpeedPidParams(double kp, double ki, double kd);
+  void setRollPidParams(const PidParams& params) {
+    setRollPidParams(params.kp, params.ki, params.kd);
+  }
+  void setSpeedPidParams(const PidParams& params) {
+    setSpeedPidParams(params.kp, params.ki, params.kd);
+  }
+  const PidParams& getRollPidParams() {
+    PidParams params;
+    params.kp = rollPID.GetKp();
+    params.ki = rollPID.GetKi();
+    params.kd = rollPID.GetKd();
+    return params;
+  }
+  const PidParams& getSpeedPidParams() {
+    PidParams params;
+    params.kp = speedPID.GetKp();
+    params.ki = speedPID.GetKi();
+    params.kd = speedPID.GetKd();
+    return params;
+  }
   inline void setRemoteControlInput(double speed, double steer)
   {
     this->input.targetSpeedProportion = speed;
