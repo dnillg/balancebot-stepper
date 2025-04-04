@@ -92,11 +92,11 @@ ISerialUnit *DG1SerialUnit::fromLine(String line)
 // DG2 Serial Unit
 DG2SerialUnit::DG2SerialUnit(uint16_t sqn, float cs, float ts) : sequenceNumber(sqn), speed(cs), targetSpeed(ts) {}
 SerialUnitAlias DG2SerialUnit::getAlias() { return DG2; }
-String DG1SerialUnit::toString()
+String DG2SerialUnit::toString()
 {
-  return LINE_PREFIX + String(sequenceNumber) + "," + String(currentRoll, 3) + "," + String(targetRoll, 3);
+  return LINE_PREFIX + String(sequenceNumber) + "," + String(speed, 3) + "," + String(targetSpeed, 3);
 }
-ISerialUnit *DG1SerialUnit::fromLine(String line)
+ISerialUnit *DG2SerialUnit::fromLine(String line)
 {
   // Not implemented
   return new ParseErrorSerialUnit(line);
@@ -115,15 +115,12 @@ ISerialUnit *ControlSerialUnit::fromLine(String line)
   }
   try {
     String nonPrefixLine = line.substring(LINE_PREFIX.length());
-    Serial.println(line);
-    Serial.println(nonPrefixLine);
     int index = nonPrefixLine.indexOf(',');
     if (index == -1) {
       return new ParseErrorSerialUnit(line);
     }
     auto spd = nonPrefixLine.substring(index + 1).toFloat();
     auto str = nonPrefixLine.substring(0, index).toFloat();  
-    Serial.println("" + String(spd) + ";" + String(str));
     return new ControlSerialUnit(spd, str);
   } catch (const std::exception &e) {
     Serial.println("Error parsing ControlSerialUnit: " + String(e.what()));

@@ -462,6 +462,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   private fun stepChartConfig(offset: Int = 1) {
     chartConfigIndex = (chartConfigurations.size + chartConfigIndex + offset) % chartConfigurations.size
     val config = chartConfigurations[chartConfigIndex]
+    serialWorker?.enqueue(TriggerSerialUnit(TriggerType.DIAGMODE, config.alias))
     lineChart.axisLeft.axisMinimum = config.minimumValue;
     lineChart.axisLeft.axisMaximum = config.maximumValue;
     val lineData = LineData().apply {
@@ -544,6 +545,8 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       return;
     }
     doConnectBluetooth()
+    val config = chartConfigurations[chartConfigIndex]
+    serialWorker?.enqueue(TriggerSerialUnit(TriggerType.DIAGMODE, config.alias))
     Log.i(this::class.simpleName, "Connected.")
   }
 

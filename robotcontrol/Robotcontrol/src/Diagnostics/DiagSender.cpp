@@ -5,10 +5,14 @@ void DiagSender::send(DiagDTO dto) {
     return;
   }
   if (mode == DIAG_MODE_ROLL) {
-    DG1SerialUnit serialUnit = DG1SerialUnit(dto.cycleNo, dto.roll, dto.rollSetpoint);
-    this->serial->println(serialUnit.toString());
+    if (dto.cycleNo % 8 == 0) {
+      DG1SerialUnit serialUnit = DG1SerialUnit(dto.cycleNo, dto.roll, dto.rollSetpoint);
+      this->serial->println(serialUnit.toString());
+    }
   } else if (mode == DIAG_MODE_SPEED) {
-    DG1SerialUnit serialUnit = DG1SerialUnit(dto.cycleNo, dto.roll, dto.rollSetpoint);
-    this->serial->println(serialUnit.toString());
+    if (dto.cycleNo % 8 == 0) {  
+      DG2SerialUnit serialUnit = DG2SerialUnit(dto.cycleNo, dto.roll, dto.rollSetpoint);
+      this->serial->println(serialUnit.toString());
+    }
   }
 }

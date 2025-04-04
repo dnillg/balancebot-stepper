@@ -25,7 +25,9 @@ enum SerialUnitAlias
   SETPID,              // Set PID values
   MOTTOG,              // Toggle motor power
   TRIG,                // Trigger an event
-  NOOP                 // No operation, not a serial unit
+  NOOP,                // No operation, not a serial unit
+  DG1,                 // Diagnostic message (roll)
+  DG2,                 // Diagnostic message (speed)
 };
 
 // Mapping Enum to String
@@ -109,6 +111,22 @@ public:
   uint16_t getSequenceNumber() { return sequenceNumber; }
   float getCurrentRoll() { return currentRoll; }
   float getTargetRoll() { return targetRoll; }
+};
+
+class DG2SerialUnit : public ISerialUnit
+{
+private:
+  uint16_t sequenceNumber;
+  float speed, targetSpeed;
+public:
+  static const String LINE_PREFIX;
+  DG2SerialUnit(uint16_t, float, float);
+  SerialUnitAlias getAlias() override;
+  String toString() override;
+  static ISerialUnit *fromLine(String line);
+  uint16_t getSequenceNumber() { return sequenceNumber; }
+  float getSpeed() { return speed; }
+  float getTargetSpeed() { return targetSpeed; }
 };
 
 class ControlSerialUnit : public ISerialUnit

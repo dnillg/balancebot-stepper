@@ -58,7 +58,7 @@ struct GlobalState
   Motors motors = Motors(&leftMotor, &rightMotor);
   SpeedAggregator speedAgg500 = SpeedAggregator(10, 10); // 500ms
   SpeedAggregator speedAgg250 = SpeedAggregator(10, 5); // 250ms
-  DiagSender diagSender = DiagSender();
+  DiagSender diagSender = DiagSender(&ioSerial);
   FailSafeMotorOutputFilter failSafe = FailSafeMotorOutputFilter(FAILSAFE_THRESHOLD_MS);
   StationaryCutoffMotorOutputFilter stationaryCutoff = StationaryCutoffMotorOutputFilter(20, 20, STATIONARY_CUTOFF_ROLL_RANGE, STATIONARY_CUTOFF_SPEED_RANGE);
   SteeringMotorOutputFilter steeringMotorOutputFilter = SteeringMotorOutputFilter(REMOTE_MAX_STEERING_OFFSET);
@@ -157,6 +157,7 @@ void setup()
   #if IO_SERIAL_ENABLED == true
   Serial.println("Initializing IO Serial");
   gstate.ioSerial.begin(IO_SERIAL_BAUD);
+  delay(100);
   Serial.println("IO Serial initialized.");
   #endif
 
@@ -164,7 +165,7 @@ void setup()
   xTaskCreatePinnedToCore(
       controlTask,
       "ctrl",
-      2048,
+      4096,
       NULL,
       2,
       NULL,
@@ -177,7 +178,7 @@ void setup()
   xTaskCreatePinnedToCore(
       ioSerialReadTask,
       "ioSerial",
-      2048,
+      4096,
       NULL,
       4,
       NULL,
@@ -197,7 +198,7 @@ void ioSerialReadTask(void *pvParameters)
       String input = gstate.ioSerial.readStringUntil('\n');
       gstate.serialUnitProcessor.process(SerialUnitFactory::readAlias(input), input);
     }
-    taskYIELD();
+    vTaskDelay(1 / portTICK_PERIOD_MS);
   }
 }
 

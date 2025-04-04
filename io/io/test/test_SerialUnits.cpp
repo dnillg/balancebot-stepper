@@ -31,8 +31,8 @@ void test_ControlSerialUnit()
     TEST_ASSERT_EQUAL(CTRL, control.getAlias());
     ControlSerialUnit* control2 = (ControlSerialUnit*)(ControlSerialUnit::fromLine(line));
     TEST_ASSERT_EQUAL(CTRL, control2->getAlias());
-    TEST_ASSERT_EQUAL(1.0f, control2->getSpeed());
-    TEST_ASSERT_EQUAL(2.0f, control2->getSteer());
+    TEST_ASSERT_EQUAL(2.0f, control2->getSpeed());
+    TEST_ASSERT_EQUAL(1.0f, control2->getSteer());
     delete control2;
 }
 
@@ -78,16 +78,16 @@ void test_GetPidSerialUnit()
 
 void test_SetPidSerialUnit()
 {
-    SetPidSerialUnit setPid("type", 1.0, 2.0, 3.0);
+    SetPidSerialUnit setPid("type", 1.101, 2.000, 99.0);
     String line = setPid.toString();
-    TEST_ASSERT_EQUAL_STRING("SETPID>type,1.00,2.00,3.00", line.c_str());
+    TEST_ASSERT_EQUAL_STRING("SETPID>type,1.101,2.000,99.000", line.c_str());
     TEST_ASSERT_EQUAL(SETPID, setPid.getAlias());
     SetPidSerialUnit* setPid2 = (SetPidSerialUnit*)(SetPidSerialUnit::fromLine(line));
     TEST_ASSERT_EQUAL(SETPID, setPid2->getAlias());
     TEST_ASSERT_EQUAL_STRING("type", setPid2->getType().c_str());
-    TEST_ASSERT_EQUAL(1.0f, setPid2->getP());
-    TEST_ASSERT_EQUAL(2.0f, setPid2->getI());
-    TEST_ASSERT_EQUAL(3.0f, setPid2->getD());
+    TEST_ASSERT_EQUAL(1.101f, setPid2->getP());
+    TEST_ASSERT_EQUAL(2.000f, setPid2->getI());
+    TEST_ASSERT_EQUAL(99.0f, setPid2->getD());
     delete setPid2;
 }
 

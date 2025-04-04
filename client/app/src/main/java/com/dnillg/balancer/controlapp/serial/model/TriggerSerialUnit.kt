@@ -16,7 +16,8 @@ enum class TriggerType {
   TROLOLO,
   MINECRAFT,
   CSIPKES,
-  TARKOV
+  TARKOV,
+  DIAGMODE
 }
 
 class TriggerSerialUnit (
