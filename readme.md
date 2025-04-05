@@ -127,4 +127,3 @@ I unplugged the wrong connector...
 - Both could stand, but they were not very stable and could not drive.
 - I changed to stepper motors to gain new experience and hoping for better results.
 - Over the years I also got maturated and started to do things slower and more carefully.
-- 
