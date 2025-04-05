@@ -1,4 +1,4 @@
-# Balance Robot 3
+# Stepper Balance Robot 
 
 ![Robot](./assets/images/robot.jpg)
 
@@ -37,7 +37,7 @@ Apart from the usual components, it has a 240x240 round LCD display and speaker 
 - Speed PID calculates a target roll angle
 - Roll PID calculates the target speed of the motors
 - The control input applies a difference to the target speed on each motor
-- The Stepper motor has a maximum accelaration of ~10000 steps/s², therefore the control output is dampened.
+- The Stepper motor has a maximum acceleration of ~10000 steps/s², therefore the control output is dampened.
 - The control output is limited to 8000 steps/s (Micro stepping: 16)
 
 ## Features
@@ -86,21 +86,24 @@ Apart from the usual components, it has a 240x240 round LCD display and speaker 
 | 2 Nitro Buggy wheels                              | 2          | Nitro buggy wheels for the robot, ca. 110mm diam.     | 
 | 18AWG copper cable for power connection           | 1          | ~ 1-2m                                                |
 | 20-wide Jumper wires                              | 1          | ~ 2-3m                                                |
-| ------------------------------------------------- | ---------- | ---------------------------------------------------   |
 
 ## Incidents
 
+As a wannabe
+
 ### Incident Zero
-I used the same connector for the 13V and 5V. I was so excited to test and plugged the 5V into the 13V rail.
-The ESP32 voltage regulator was glowing and removed itself from the PCB.
+I used the same connector for the 13V and 5V. I was so excited to test, that I plugged the 5V into the 13V rail.
+The ESP32 voltage regulator was glowing and removed itself from the PCB flying with 50-80 cm trajectory.
 I was somewhat cautious and did not insert the other components. Luckily.
 
 ### First Incident
 I tried to debug both ESP32 at the same time via USB, but the 5V and 3.3V rails were connected.
 This caused voltage differences and all low voltage components got damaged.
+The PCB was also manufactured in a very amateurish way, so I decided to make a new one.
 
 ### Second Incident
-I tried to debug the ESP32 via USB, but the 5V rail was still connected, even though I made a 3 pole XT30 connector, so I can disconnect the 5V rail.
+Even though I made a 3 pole XT30 connector, so I can disconnect the 5V rail.
+I tried to debug the ESP32 via USB, but the 5V rail was still connected. 
 I unplugged the wrong connector.
 
 ### Component Graveyard
@@ -113,6 +116,8 @@ I unplugged the wrong connector.
 | TMC5160T      | 2              | First Incident    |
 | PCB Prototype | 1              | First Incident    |
 | ESP32         | 1              | Second Incident   |
-| ------------- | -------------- | ----------------  |
 
+## Pictures
+![Robot](./assets/images/pcb-front-full.jpg)
 
+![Robot](./assets/images/pcb-back.jpg)
