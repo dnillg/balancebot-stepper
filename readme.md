@@ -9,7 +9,7 @@ The robot is powered by a 3-4S LiPo battery and the chassis consists of metal sp
 
 Apart from the usual components, it has a 240x240 round LCD display and speaker driven by DFPlayer Mini MP3 module.
 
-## Setting up
+## Setting up for Development
 1. Install VSCode and the PlatformIO extension.
 2. Open one of the PlatformIO projects in VSCode (has platformio.ini in root).
 3. Install Android Studio
@@ -37,7 +37,7 @@ Apart from the usual components, it has a 240x240 round LCD display and speaker 
 - Speed PID calculates a target roll angle
 - Roll PID calculates the target speed of the motors
 - The control input applies a difference to the target speed on each motor
-- The Stepper motor has a maximum acceleration of ~10000 steps/s², therefore the control output is dampened.
+- The Stepper motor has a maximum acceleration of ~10000-20000 steps/s², therefore the control output is dampened.
 - The control output is limited to 8000 steps/s (Micro stepping: 16)
 
 ## Features
@@ -89,7 +89,7 @@ Apart from the usual components, it has a 240x240 round LCD display and speaker 
 
 ## Incidents
 
-As a wannabe
+With limited experience with electronics it's part of the game. :)
 
 ### Incident Zero
 I used the same connector for the 13V and 5V. I was so excited to test, that I plugged the 5V into the 13V rail.
@@ -104,7 +104,7 @@ The PCB was also manufactured in a very amateurish way, so I decided to make a n
 ### Second Incident
 Even though I made a 3 pole XT30 connector, so I can disconnect the 5V rail.
 I tried to debug the ESP32 via USB, but the 5V rail was still connected. 
-I unplugged the wrong connector.
+I unplugged the wrong connector...
 
 ### Component Graveyard
 
@@ -121,3 +121,10 @@ I unplugged the wrong connector.
 ![Robot](./assets/images/pcb-front-full.jpg)
 
 ![Robot](./assets/images/pcb-back.jpg)
+
+## History
+- I made two robots before with geared DC motors and encoders. (around 2017 and 2019)
+- Both could stand, but they were not very stable and could not drive.
+- I changed to stepper motors to gain new experience and hoping for better results.
+- Over the years I also got maturated and started to do things slower and more carefully.
+- 
