@@ -74,8 +74,6 @@
 #define STATIONARY_CUTOFF_SPEED_RANGE 200.0
 #define STATIONARY_CUTOFF_ROLL_RANGE 0.0065
 
-#define AVG_SPEED_SAMPLES 20
-
 // ----------------------------------------------------------------------------
 // REMOTE CONTROL
 // ----------------------------------------------------------------------------

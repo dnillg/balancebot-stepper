@@ -7,12 +7,14 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Paint.Align
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,12 +25,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Call
@@ -36,15 +40,15 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -54,6 +58,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -67,13 +72,13 @@ import com.dnillg.balancer.controlapp.components.Joystick
 import com.dnillg.balancer.controlapp.components.LargeButton
 import com.dnillg.balancer.controlapp.components.SimpleButton
 import com.dnillg.balancer.controlapp.components.SimpleImageButton
-import com.dnillg.balancer.controlapp.domain.chart.SinusGenerator
 import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesChartEntry
 import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesType
 import com.dnillg.balancer.controlapp.domain.chart.chartConfigurations
 import com.dnillg.balancer.controlapp.domain.model.ConnectionStatus
 import com.dnillg.balancer.controlapp.domain.model.PIDType
 import com.dnillg.balancer.controlapp.domain.model.PIDValues
+import com.dnillg.balancer.controlapp.domain.model.Setting
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
@@ -102,8 +107,13 @@ import javax.inject.Inject
 
 data class MainActivityAsyncJobs(
   var chartRenderer: Job? = null,
-  var sinGenerator: Job? = null,
 )
+
+enum class ActivityPage {
+  DIAGNOSTICS,
+  PID_ADJUST,
+  PARAM_ADJUST,
+}
 
 class MainActivity @Inject constructor() : ComponentActivity() {
 
@@ -117,7 +127,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     duration = 5.0,
     entryCreator = { timeSeries, value -> TimeSeriesChartEntry(timeSeries, value) },
   )
-  private val sinusGenerators: MutableMap<String, SinusGenerator> = HashMap()
   private lateinit var lineChart: LineChart;
 
   // States
@@ -130,9 +139,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   private var chartConfigIndex = 0;
 
   init {
-    sinusGenerators["1"] =
-      SinusGenerator(samplesPerSecond = 40, amplitude = 100.0, frequency = 2.0)
-    sinusGenerators["2"] = SinusGenerator(samplesPerSecond = 100, amplitude = 1.0, frequency = 3.0)
     TimeSeriesType.entries.forEach {
       timeSeriesWindow.init(it.alias, 40)
     }
@@ -163,7 +169,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
 
   @Composable
   fun LandscapeLayout() {
-    val pageIndex = remember { mutableIntStateOf(0) }
+    val page = remember { mutableStateOf(ActivityPage.DIAGNOSTICS) }
 
     Row(
       modifier = Modifier
@@ -177,9 +183,10 @@ class MainActivity @Inject constructor() : ComponentActivity() {
           .weight(1f)
           .fillMaxHeight(1.0f)
       ) {
-        when (pageIndex.intValue) {
-          0 -> StyledLineChart()
-          1 -> PidPage()
+        when (page.value) {
+          ActivityPage.DIAGNOSTICS -> StyledLineChart()
+          ActivityPage.PID_ADJUST -> PidPage()
+          ActivityPage.PARAM_ADJUST -> ParamsPage()
         }
       }
       Column(
@@ -190,7 +197,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
-        SidebarContent(pageIndex)
+        SidebarContent(page)
       }
     }
   }
@@ -255,15 +262,16 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         })
       }
 
-      PidValueRow(pidValues, {pv -> pv.p}, {inc ->
+      val enabled = pidValues.value.initialized()
+      PidValueRow(enabled, { pv -> pv.p}, { inc ->
         pidValues.value = pidValues.value.incP(inc)
         setPidAction.invoke()
       })
-      PidValueRow(pidValues, {pv -> pv.i}, {inc ->
+      PidValueRow(enabled, {pv -> pv.i}, {inc ->
         pidValues.value = pidValues.value.incI(inc)
         setPidAction.invoke()
       })
-      PidValueRow(pidValues, {pv -> pv.d}, {inc ->
+      PidValueRow(enabled, {pv -> pv.d}, {inc ->
         pidValues.value = pidValues.value.incD(inc)
         setPidAction.invoke()
       })
@@ -271,12 +279,93 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   }
 
   @Composable
-  private fun PidValueRow(pidValues: MutableState<PIDValues>, valueExt: (PIDValues)->Float, incFunc: (Float)->Unit) {
+  fun DropDownDemo() {
+
+    val isDropDownExpanded = remember {
+      mutableStateOf(false)
+    }
+    val itemPosition = remember {
+      mutableStateOf(0)
+    }
+    val options = Setting.settings.map { it.name }
+
+    val openDropdown = {
+      isDropDownExpanded.value = true
+    }
+
+    Column(
+      modifier = Modifier.fillMaxSize(),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Top
+    ) {
+
+      Box (Modifier.padding(top = 34.dp)) {
+        Row(
+          horizontalArrangement = Arrangement.Center,
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier.clickable(onClick = openDropdown)
+        ) {
+          Box(
+            contentAlignment = Alignment.CenterStart,
+            modifier = Modifier
+              .height(42.dp)
+              .weight(1f)
+              .background(Color.DarkGray, shape = RoundedCornerShape(4.dp)),
+          ) {
+            Text(
+              text = options[itemPosition.value],
+              color = Color.White,
+              textAlign = TextAlign.Left,
+              modifier = Modifier.padding(start = 8.dp)
+            )
+          }
+          Box(Modifier.offset(x = -21.dp)) {
+            SimpleButton(imageVector = Icons.Filled.ArrowDropDown, onClick = openDropdown)
+          }
+        }
+        DropdownMenu(
+          expanded = isDropDownExpanded.value,
+          onDismissRequest = {
+            isDropDownExpanded.value = false
+          }) {
+          options.forEachIndexed { index, name ->
+            DropdownMenuItem(text = {
+              Text(text = name)
+            },
+              onClick = {
+                isDropDownExpanded.value = false
+                itemPosition.value = index
+              })
+          }
+        }
+      }
+
+    }
+  }
+
+  @Composable
+  private fun ParamsPage() {
+    Column(
+      modifier = Modifier.fillMaxSize().padding(8.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+      horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+      val items = listOf("Apple", "Banana", "Cherry")
+      var expanded = remember { mutableStateOf(false) }
+      var selectedText = remember { mutableStateOf(items[0]) }
+      pidValues = remember { mutableStateOf(PIDValues()) }
+      DropDownDemo()
+      //PidValueRow() { }
+    }
+  }
+
+  @Composable
+  private fun PidValueRow(enabled: Boolean, valueExt: (PIDValues)->Float, incFunc: (Float)->Unit) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      val enabled = pidValues.value.initialized();
+      //val enabled = pidValues.value.initialized();
       PidAdjustButton("--", Color.Black, {
         incFunc.invoke(-0.1f)
       }, enabled = enabled)
@@ -295,7 +384,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
 
   @Composable
   private fun SidebarContent(
-    page : MutableState<Int>
+    page : MutableState<ActivityPage>
   ) {
     val showDialog = remember { mutableStateOf(false) }
     connectionStatus = remember { mutableStateOf(ConnectionStatus()) }
@@ -327,16 +416,14 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     }
 
     SidebarRow {
-      SimpleButton(
-        onClick = {
-          serialWorker?.enqueue(MotorToggleSerialUnit())
-        }, imageVector = Icons.Filled.Lock
-      )
       SimpleButton(onClick = {
-        page.value = 1;
+        page.value = ActivityPage.PARAM_ADJUST;
+      }, imageVector = Icons.Filled.Settings)
+      SimpleButton(onClick = {
+        page.value = ActivityPage.PID_ADJUST;
       }, Icons.Filled.Build)
       SimpleButton({
-        page.value = 0;
+        page.value = ActivityPage.DIAGNOSTICS;
       }, Icons.Filled.Home)
       SimpleButton({
         showDialog.value = true
@@ -363,15 +450,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         }
       })
     }
-  }
-
-  @Composable
-  private fun sinGeneratorButton() {
-    SimpleButton({
-      startChartRenderer()
-      startSinGenerator()
-      connectionStatus.value = ConnectionStatus().toConnected()
-    }, Icons.Default.PlayArrow)
   }
 
   @Composable
@@ -451,11 +529,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         }
       }
     }
-  }
-
-  private fun stopSinGeneratorRoutine() {
-    asyncJobs.sinGenerator?.cancel()
-    asyncJobs.sinGenerator = null;
   }
 
   private fun stopChartRendererRoutine() {
@@ -595,29 +668,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       ),
       BLUETOOTH_PERMISSION_REQUEST_CODE
     )
-  }
-
-  private fun startSinGenerator() {
-    asyncJobs.sinGenerator = CoroutineScope(Dispatchers.Default).launch {
-      var seqNo = 0;
-      while (true) {
-        val v = sinusGenerators["2"]!!.next()
-        chartDataBacklog.add(
-          DiagDataSerialUnit(
-            seqNo,
-            v * 150f,
-            v * 180f,
-            v * 8000f,
-            v * 9000f,
-            v * 4000f,
-            v * 6000f
-          )
-        )
-        seqNo+=5;
-        delay(5);
-        seqNo %= 1000;
-      }
-    }
   }
 
   companion object {

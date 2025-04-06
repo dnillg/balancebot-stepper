@@ -1,7 +1,8 @@
 package com.dnillg.balancer.controlapp.domain.model
 
-import com.dnillg.balancer.controlapp.serial.model.SerialUnit
 import kotlin.math.abs
+
+private const val MIN_VALUE = 0.000001f
 
 data class PIDValues(
   val pidType: PIDType? = null,
@@ -19,18 +20,18 @@ data class PIDValues(
       prop = -absProp
     }
     val newValue = prevValue * (1.0f + absProp)
-    if (abs(newValue) < 0.001f && newValue > 0f && prop < 0.0f) {
+    if (abs(newValue) < MIN_VALUE && newValue > 0f && prop < 0.0f) {
       return 0f
     }
-    if (abs(newValue) < 0.001f && newValue < 0f && prop > 0.0f) {
+    if (abs(newValue) < MIN_VALUE && newValue < 0f && prop > 0.0f) {
       return 0f
     }
 
-    if (abs(newValue) < 0.001f && prop < 0f) {
-      return -0.001f
+    if (abs(newValue) < MIN_VALUE && prop < 0f) {
+      return -MIN_VALUE
     }
-    if (abs(newValue) < 0.001f && prop > 0f) {
-      return 0.001f
+    if (abs(newValue) < MIN_VALUE && prop > 0f) {
+      return MIN_VALUE
     }
 
     return newValue
