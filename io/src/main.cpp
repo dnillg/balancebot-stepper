@@ -70,9 +70,6 @@ GlobalState gstate;
 SPIClass SPISD(HSPI);
 SPIClass SPITFT(VSPI);
 
-const char *gifPath = "/carma-240.gif";
-const char *gifPath2 = "/pedro-4x.gif";
-
 void setup()
 {
   setCpuFrequencyMhz(160);
@@ -163,6 +160,7 @@ void setup()
 
 void loop()
 {
+  // Nothing to do here, everything is handled in tasks
 }
 
 // ----------------------------------------------------------------------------
@@ -195,13 +193,12 @@ void bluetoothSerialReaderTask(void *pvParameters)
     while (gstate.serialBT.available())
     {
       try {
+        // TODO: Make a very effective buffering for the current line and sending to the controlSerial
         String line = gstate.serialBT.readStringUntil('\n');
         gstate.controlSerial.println(line);
         processSerialUnit(BLUETOOTH, line);
-        #if LOG_BT_REC == true
         Serial.print("BT-REC: ");
         Serial.println(line);
-        #endif
       } catch (const std::exception& e) {
         Serial.println("ERROR: Could not read bluetooth serial. Reason: " + String(e.what()));
       }

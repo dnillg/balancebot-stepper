@@ -78,14 +78,14 @@ public:
   void setSpeedPidParams(const PidParams& params) {
     setSpeedPidParams(params.kp, params.ki, params.kd);
   }
-  const PidParams& getRollPidParams() {
+  PidParams getRollPidParams() {
     PidParams params;
     params.kp = rollPID.GetKp();
     params.ki = rollPID.GetKi();
     params.kd = rollPID.GetKd();
     return params;
   }
-  const PidParams& getSpeedPidParams() {
+  PidParams getSpeedPidParams() {
     PidParams params;
     params.kp = speedPID.GetKp();
     params.ki = speedPID.GetKi();

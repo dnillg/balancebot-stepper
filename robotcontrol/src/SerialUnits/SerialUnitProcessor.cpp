@@ -6,31 +6,56 @@ void SerialUnitProcessor::process(const SerialUnitAlias alias, const String &lin
   {
     return;
   }
-  if (backlog.size() >= 10)
-  {
-    Serial.println("Backlog full, skipping...");
-  }
-  else
-  {
   ISerialUnit *unit = SerialUnitFactory::fromLine(line);
-  backlog.push_back(unit);
+  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+    if (backlog.size() >= 10)
+    {
+      Serial.println("Backlog full, skipping...");
+      delete unit;
+    }
+    else
+    {
+    backlog.push_back(unit);
+    }
+    xSemaphoreGive(mutex);
+  }
+}
+
+ISerialUnit* SerialUnitProcessor::popBacklog()
+{
+  ISerialUnit *unit = nullptr;
+  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+    if (backlog.size() > 0)
+    {
+      unit = backlog.front();
+      backlog.pop_front();
+    }
+    xSemaphoreGive(mutex);
+  }
+  return unit;
+}
+
+void SerialUnitProcessor::pushBacklog(ISerialUnit* unit) {
+  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+    backlog.push_back(unit);
+    xSemaphoreGive(mutex);
   }
 }
 
 void SerialUnitProcessor::run()
 {
-  while (backlog.size() > 0)
+  ISerialUnit* item = popBacklog();
+  while (item != nullptr)
   {
-    ISerialUnit *unit = backlog.front();
-    backlog.pop_front();
-    if (serialUnitListeners.find(unit->getAlias()) != serialUnitListeners.end())
+    if (serialUnitListeners.find(item->getAlias()) != serialUnitListeners.end())
     {
-      for (SerialUnitListener *listener : serialUnitListeners[unit->getAlias()])
+      for (SerialUnitListener *listener : serialUnitListeners[item->getAlias()])
       {
-        listener->consume(unit);
+        listener->consume(item);
       }
     }
-    delete unit;
+    delete item;
+    item = popBacklog();
   }
 }
 

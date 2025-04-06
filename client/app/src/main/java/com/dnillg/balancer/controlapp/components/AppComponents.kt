@@ -52,7 +52,7 @@ fun LargeButton(
 
 @Composable
 fun FloatingPointBox(number: Float) {
-  val format = if (number < 10) "%.4f" else if (number < 1000) "%.2f" else "%.0f"
+  val format = if (number < 1) "%.10f" else if (number < 10) "%.4f" else if (number < 1000) "%.2f" else "%.0f"
   val formattedNumber = String.format(format, number)
   PidBox(modifier = Modifier.width(240.dp), text = formattedNumber)
 }
@@ -66,14 +66,14 @@ private fun PidBox(modifier: Modifier = Modifier, text: String) {
         shape = RoundedCornerShape(8.dp)
       ) // Rounded background
       .padding(6.dp),
-    contentAlignment = Alignment.Center // Center the content inside the box
+    contentAlignment = Alignment.Center
   ) {
     Text(
       text = text,
-      fontSize = 24.sp, // 32pt font size
-      color = Color.Black, // White text color
-      fontWeight = FontWeight.Bold, // Bold font weight
-      textAlign = TextAlign.Center // Center align the text
+      fontSize = 22.sp,
+      color = Color.Black,
+      fontWeight = FontWeight.Bold,
+      textAlign = TextAlign.Center
     )
   }
 }

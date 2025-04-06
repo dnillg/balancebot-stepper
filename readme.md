@@ -102,7 +102,7 @@ This caused voltage differences and all low voltage components got damaged.
 The PCB was also manufactured in a very amateurish way, so I decided to make a new one.
 
 ### Second Incident
-Even though I made a 3 pole XT30 connector, so I can disconnect the 5V rail.
+I made a 3 pole XT30 connector, so I can separate the 5V rails.
 I tried to debug the ESP32 via USB, but the 5V rail was still connected. 
 I unplugged the wrong connector...
 

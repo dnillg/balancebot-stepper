@@ -191,7 +191,7 @@ ISerialUnit *MotorToggleSerialUnit::fromLine(String line)
 // GetPidResponse Serial Unit
 GetPidResponseSerialUnit::GetPidResponseSerialUnit(String t, float p, float i, float d) : type(t), p(p), i(i), d(d) {}
 SerialUnitAlias GetPidResponseSerialUnit::getAlias() { return GETPIDRSP; }
-String GetPidResponseSerialUnit::toString() { return LINE_PREFIX + type + "," + String(p) + "," + String(i) + "," + String(d); }
+String GetPidResponseSerialUnit::toString() { return LINE_PREFIX + type + "," + String(p, 10) + "," + String(i, 10) + "," + String(d, 10); }
 
 ISerialUnit *GetPidResponseSerialUnit::fromLine(String line)
 {
@@ -212,7 +212,7 @@ ISerialUnit *GetPidResponseSerialUnit::fromLine(String line)
 // SetPid Serial Unit
 SetPidSerialUnit::SetPidSerialUnit(String t, float p, float i, float d) : type(t), p(p), i(i), d(d) {}
 SerialUnitAlias SetPidSerialUnit::getAlias() { return SETPID; }
-String SetPidSerialUnit::toString() { return LINE_PREFIX + type + "," + String(p) + "," + String(i) + "," + String(d); }
+String SetPidSerialUnit::toString() { return LINE_PREFIX + type + "," + String(p, 10) + "," + String(i, 10) + "," + String(d, 10); }
 
 ISerialUnit *SetPidSerialUnit::fromLine(String line)
 {

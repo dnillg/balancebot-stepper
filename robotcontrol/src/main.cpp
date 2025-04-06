@@ -22,6 +22,8 @@
 #include "Listeners/ControlToggleListener.hpp"
 #include "Listeners/RemoteControlListener.hpp"
 #include "Listeners/DiagTriggerListener.hpp"
+#include "Listeners/GetPidListener.hpp"
+#include "Listeners/SetPidListener.hpp"
 
 // ----------------------------------------------------------------------------
 // Function Declarations
@@ -65,6 +67,8 @@ struct GlobalState
   ControlToggleListener controlToggleListener = ControlToggleListener(&control, &motors);
   SerialUnitProcessor serialUnitProcessor = SerialUnitProcessor();
   DiagTriggerListener diagTriggerListener = DiagTriggerListener(&diagSender);
+  GetPidListener getPidListener = GetPidListener(&control, &ioSerial);
+  SetPidListener setPidListener = SetPidListener(&control);
 };
 
 GlobalState gstate;
@@ -151,6 +155,8 @@ void setup()
   gstate.serialUnitProcessor.addListener(&gstate.remoteControlListener);
   gstate.serialUnitProcessor.addListener(&gstate.controlToggleListener);
   gstate.serialUnitProcessor.addListener(&gstate.diagTriggerListener);
+  gstate.serialUnitProcessor.addListener(&gstate.getPidListener);
+  gstate.serialUnitProcessor.addListener(&gstate.setPidListener);
 
   #if IO_SERIAL_ENABLED == true
   Serial.println("Initializing IO Serial");

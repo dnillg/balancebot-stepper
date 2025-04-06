@@ -309,9 +309,13 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     SidebarRow {
       SimpleButton({
         connectBluetooth()
-        createAndStartSerialWorker()
-        connectionStatus.value = ConnectionStatus().toConnected()
-        startChartRenderer()
+        if (btConnection != null) {
+          createAndStartSerialWorker()
+          val config = chartConfigurations[chartConfigIndex]
+          serialWorker?.enqueue(TriggerSerialUnit(TriggerType.DIAGMODE, config.alias))
+          connectionStatus.value = ConnectionStatus().toConnected()
+          startChartRenderer()
+        }
       }, Icons.Default.Call)
       SimpleButton({
         stopChartRendererRoutine()
@@ -545,8 +549,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       return;
     }
     doConnectBluetooth()
-    val config = chartConfigurations[chartConfigIndex]
-    serialWorker?.enqueue(TriggerSerialUnit(TriggerType.DIAGMODE, config.alias))
     Log.i(this::class.simpleName, "Connected.")
   }
 
