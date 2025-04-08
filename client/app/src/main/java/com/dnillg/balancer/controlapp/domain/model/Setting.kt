@@ -21,3 +21,51 @@ data class Setting (
     )
   }
 }
+
+interface SettingValue <T> {
+  val value: T
+
+  fun adjust(amount: Double)
+}
+
+class SettingBooleanValue(
+  override var value: Boolean,
+) : SettingValue<Boolean>
+{
+  override fun adjust(amount: Double) {
+    value = if (amount > 0) true else false
+  }
+}
+
+class SettingIntValue(
+  override var value: Int,
+) : SettingValue<Int>
+{
+  override fun adjust(amount: Double) {
+    value = (value + amount).toInt()
+  }
+}
+
+class SettingDoubleValue(
+  override var value: Double,
+) : SettingValue<Double>
+{
+  override fun adjust(amount: Double) {
+    value += amount
+  }
+}
+
+class SettingEnumValue<T : Enum<T>>(
+  value: T,
+  private val enumClass: Class<T>,
+) : SettingValue<T> {
+  override var value: T = value
+    private set
+
+  override fun adjust(amount: Double) {
+    val enumSize = enumClass.enumConstants!!.size;
+    val offset = if (amount > 0) 1 else if (amount < 0) -1 else 0
+    val newOrdinal = (value.ordinal + offset) % enumSize
+    value = enumClass.enumConstants!![newOrdinal];
+  }
+}

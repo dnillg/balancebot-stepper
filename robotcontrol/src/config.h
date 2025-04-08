@@ -14,16 +14,16 @@
 
 #define MOTOR_R_SENSE 0.075f
 #define MOTOR_TOFF 5
-#define MOTOR_RMS_CURRENT 1100
-#define MOTOR_IRUN 20
-#define MOTOR_IHOLD 4
-#define MOTOR_IHOLDDELAY 700
+#define MOTOR_RMS_CURRENT 1500
+#define MOTOR_IRUN 26
+#define MOTOR_IHOLD 18
+#define MOTOR_IHOLDDELAY 5
 #define MOTOR_MAX_MICROSTEPPING 16
 #define MOTOR_PWM_AUTOSCALE true
 #define MOTOR_PWM_MODE true
 
-#define MOTOR_MAX_SPEED 8000
-#define MOTOR_MAX_ACCELERATION 10000
+#define MOTOR_MAX_SPEED 10000
+#define MOTOR_MAX_ACCELERATION 12000
 
 // ----------------------------------------------------------------------------
 // IO Serial Config
@@ -53,32 +53,26 @@
 #define CONTROL_FREQUENCY 200
 
 #define CONTROL_TARGET_ROLL -1.495
-#define CONTROL_MAX_ROLL_SPEED_STEPS 1000
-#define CONTROL_MAX_SPEED_TILT_RAD_OFFSET 0.2545
-#define CONTROL_MAX_STEER_STEP16_OFFSET 1500
+#define CONTROL_MAX_ROLL_SPEED_STEPS 2800
+#define CONTROL_MAX_SPEED_ROLL_RAD_OFFSET 0.75 // 40-45 degrees in radians
+#define CONTROL_MAX_STEER_STEP16_OFFSET 3200
 
-#define CONTROL_ROLL_PID_KP 37000
+#define CONTROL_ROLL_PID_KP 44300
 #define CONTROL_ROLL_PID_KI 5000
-#define CONTROL_ROLL_PID_KD 80
+#define CONTROL_ROLL_PID_KD 94
 
-#define CONTROL_SPEED_PID_KP 0.00003
+#define CONTROL_SPEED_PID_KP 0.000045
 #define CONTROL_SPEED_PID_KI 0.0
 #define CONTROL_SPEED_PID_KD 0.0015
 
-#define CONTROL_MAX_STEP16_SPEED 8000
+#define CONTROL_MAX_STEP16_SPEED 10000
 #define CONTROL_MAX_ACCELERATION 40000
 
-#define CONTROL_MAX_SPEED_PID_OUTPUT_ACCELERATION 2
+#define CONTROL_MAX_SPEED_PID_OUTPUT_ACCELERATION 2 // Might be not needed
 
 #define STATIONARY_CUTOFF_ENABLED true
 #define STATIONARY_CUTOFF_SPEED_RANGE 200.0
 #define STATIONARY_CUTOFF_ROLL_RANGE 0.0065
-
-// ----------------------------------------------------------------------------
-// REMOTE CONTROL
-// ----------------------------------------------------------------------------
-
-#define REMOTE_MAX_STEERING_OFFSET 50.0
 
 // ----------------------------------------------------------------------------
 // Pins

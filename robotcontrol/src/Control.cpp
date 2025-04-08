@@ -8,7 +8,7 @@ Control::Control()
       speedPidOutputDampener(CONTROL_FREQUENCY, CONTROL_MAX_SPEED_PID_OUTPUT_ACCELERATION)
 {
   speedPID.SetMode(AUTOMATIC);
-  speedPID.SetOutputLimits(-CONTROL_MAX_SPEED_TILT_RAD_OFFSET, CONTROL_MAX_SPEED_TILT_RAD_OFFSET);
+  speedPID.SetOutputLimits(-CONTROL_MAX_SPEED_ROLL_RAD_OFFSET, CONTROL_MAX_SPEED_ROLL_RAD_OFFSET);
   rollPID.SetMode(AUTOMATIC);
   rollPID.SetOutputLimits(-CONTROL_MAX_STEP16_SPEED, CONTROL_MAX_STEP16_SPEED);
   rollPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
@@ -70,7 +70,7 @@ void Control::setInputSpeedAvg250(double speed)
 
 void Control::setInputSpeedAvg500(double speed)
 {
-  input.speedStepAvg500 = normalizeStep16Speed(speed);
+  input.speedStepAvg500 = antioscillation(normalizeStep16Speed(speed));
 }
 
 int16_t Control::getSteps16Left()

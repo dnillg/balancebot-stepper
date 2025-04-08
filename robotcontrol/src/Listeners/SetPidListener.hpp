@@ -21,10 +21,10 @@ public:
     if (type == "ROLL")
     {
       control->setRollPidParams(params);
-      Serial.println("Set Roll PID: " + String(params.kp) + ", " + String(params.ki) + ", " + String(params.kd));
+      Serial.println("Set Roll PID: " + String(params.kp, 10) + ", " + String(params.ki, 10) + ", " + String(params.kd, 10));
     } else if(type == "SPEED") {
       control->setSpeedPidParams(params);
-      Serial.println("Set Speed PID: " + String(params.kp) + ", " + String(params.ki) + ", " + String(params.kd));
+      Serial.println("Set Speed PID: " + String(params.kp, 10) + ", " + String(params.ki, 10) + ", " + String(params.kd, 10));
     } else {
       Serial.println("Unknown GETPID type: " + type);
     }

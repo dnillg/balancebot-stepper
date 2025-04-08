@@ -196,9 +196,10 @@ void bluetoothSerialReaderTask(void *pvParameters)
         // TODO: Make a very effective buffering for the current line and sending to the controlSerial
         String line = gstate.serialBT.readStringUntil('\n');
         gstate.controlSerial.println(line);
+        gstate.controlSerial.flush();
         processSerialUnit(BLUETOOTH, line);
-        Serial.print("BT-REC: ");
-        Serial.println(line);
+        // Serial.print("BT-REC: ");
+        // Serial.println(line);
       } catch (const std::exception& e) {
         Serial.println("ERROR: Could not read bluetooth serial. Reason: " + String(e.what()));
       }

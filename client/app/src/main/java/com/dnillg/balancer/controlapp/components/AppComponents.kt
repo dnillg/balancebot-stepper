@@ -20,12 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dnillg.balancer.controlapp.R
 
 @Composable
 fun LargeButton(
@@ -51,8 +49,8 @@ fun LargeButton(
 }
 
 @Composable
-fun FloatingPointBox(number: Float) {
-  val format = if (number < 1) "%.10f" else if (number < 10) "%.4f" else if (number < 1000) "%.2f" else "%.0f"
+fun AdjustedNumericValueBox(number: Double) {
+  val format = if (number < 1) "%.12f" else if (number < 10) "%.6f" else if (number < 1000) "%.4f" else "%.2f"
   val formattedNumber = String.format(format, number)
   PidBox(modifier = Modifier.width(240.dp), text = formattedNumber)
 }
@@ -70,7 +68,7 @@ private fun PidBox(modifier: Modifier = Modifier, text: String) {
   ) {
     Text(
       text = text,
-      fontSize = 22.sp,
+      fontSize = 18.sp,
       color = Color.Black,
       fontWeight = FontWeight.Bold,
       textAlign = TextAlign.Center

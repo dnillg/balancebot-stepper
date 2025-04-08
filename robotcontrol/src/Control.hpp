@@ -21,8 +21,6 @@ struct PidParams
   double kd;
 };
 
-constexpr double MAX_TARGET_SPEED = CONTROL_MAX_STEP16_SPEED / 3.0;
-
 class Control
 {
 private:
@@ -96,8 +94,8 @@ public:
   {
     this->input.targetSpeedProportion = speed;
     this->input.steerProportion = steer;
-    this->input.step16SpeedSetpoint = speed * MAX_TARGET_SPEED;
-    this->input.steerOffset = threshold(steer * CONTROL_MAX_STEER_STEP16_OFFSET, 250);
+    this->input.step16SpeedSetpoint = threshold(speed, 0.15) * CONTROL_MAX_ROLL_SPEED_STEPS;
+    this->input.steerOffset = threshold(steer, 0.25) * CONTROL_MAX_STEER_STEP16_OFFSET;
   }
   const ControlInput& getInput() const {
     return input;
@@ -117,6 +115,18 @@ public:
   uint16_t getMillis();
   void printPidValues();
   void setControlMode(ControlMode mode);
+  double antioscillation(double step16Speed) {
+    if (step16Speed < 25) {
+      return step16Speed * 0.25;
+    } else if (step16Speed < 50) {
+      return step16Speed * 0.5;
+    } else if (step16Speed < 75) {
+      return step16Speed * 0.75;
+    } else if (step16Speed < 100) {
+      return step16Speed * 0.85;
+    } 
+    return step16Speed;
+  }
 };
 
 #endif // CONTROL_HPP_

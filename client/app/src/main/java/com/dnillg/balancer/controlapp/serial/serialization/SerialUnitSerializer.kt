@@ -24,7 +24,7 @@ interface SerialUnitSerializer<T : SerialUnit> {
 
     companion object {
         val SHORT_FLOAT = DecimalFormat("#.###")
-        val LONG_FLOAT = DecimalFormat("#.######")
+        val LONG_FLOAT = DecimalFormat("#.##########")
         const val SEPARATOR = ",";
     }
 

@@ -16,7 +16,7 @@ class SetPIDSerialUnitSerializer : SerialUnitSerializer<SetPIDSerialUnit> {
 
     override fun serializeParams(unit: SerialUnit): String {
         unit as SetPIDSerialUnit
-        return "${unit.type},${shortFloat(unit.p)},${shortFloat(unit.i)},${shortFloat(unit.d)}"
+        return "${unit.type},${longFloat(unit.p)},${longFloat(unit.i)},${longFloat(unit.d)}"
     }
 
     override fun deserializeParams(line: String): SetPIDSerialUnit {

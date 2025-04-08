@@ -7,7 +7,6 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Paint.Align
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -49,6 +48,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -67,7 +67,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dnillg.balancer.controlapp.bluetooth.BtConnection
 import com.dnillg.balancer.controlapp.components.ConnectionBar
-import com.dnillg.balancer.controlapp.components.FloatingPointBox
+import com.dnillg.balancer.controlapp.components.AdjustedNumericValueBox
 import com.dnillg.balancer.controlapp.components.Joystick
 import com.dnillg.balancer.controlapp.components.LargeButton
 import com.dnillg.balancer.controlapp.components.SimpleButton
@@ -79,6 +79,9 @@ import com.dnillg.balancer.controlapp.domain.model.ConnectionStatus
 import com.dnillg.balancer.controlapp.domain.model.PIDType
 import com.dnillg.balancer.controlapp.domain.model.PIDValues
 import com.dnillg.balancer.controlapp.domain.model.Setting
+import com.dnillg.balancer.controlapp.domain.model.SettingDoubleValue
+import com.dnillg.balancer.controlapp.domain.model.SettingIntValue
+import com.dnillg.balancer.controlapp.domain.model.SettingValue
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
@@ -132,7 +135,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   // States
   private lateinit var connectionStatus: MutableState<ConnectionStatus>
   private lateinit var pidValues: MutableState<PIDValues>
-  private var motorsEnabled : MutableState<Boolean> = mutableStateOf(false)
+  private var motorsEnabled: MutableState<Boolean> = mutableStateOf(false)
 
   private var serialWorker: SerialWorker? = null
   private var btConnection: BtConnection? = null
@@ -203,14 +206,15 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   }
 
   @Composable
-  fun PidAdjustButton(
+  fun AdjustValueButton(
     text: String,
     textColor: Color,
     onClick: () -> Unit,
     enabled: Boolean = true
   ) {
     val bgColor = if (enabled) Color.LightGray else Color.Gray
-    val effectiveOnClick : () -> Unit = if (enabled) onClick else {->Log.d(this::class.simpleName, "Disabled")}
+    val effectiveOnClick: () -> Unit =
+      if (enabled) onClick else { -> Log.d(this::class.simpleName, "Disabled") }
 
     Button(
       onClick = effectiveOnClick,
@@ -233,23 +237,29 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   @Composable
   private fun PidPage() {
     Column(
-      modifier = Modifier.fillMaxSize().padding(8.dp),
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(8.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
       pidValues = remember { mutableStateOf(PIDValues()) }
       val setPidAction = {
-        serialWorker?.enqueue(SetPIDSerialUnit(
-          pidValues.value.pidType!!,
-          pidValues.value.p,
-          pidValues.value.i,
-          pidValues.value.d
-        )) }
+        serialWorker?.enqueue(
+          SetPIDSerialUnit(
+            pidValues.value.pidType!!,
+            pidValues.value.p,
+            pidValues.value.i,
+            pidValues.value.d
+          )
+        )
+      }
       Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
       ) {
-        val rollButtonColor = if (pidValues.value.pidType == PIDType.ROLL) Color.Red else Color.DarkGray
+        val rollButtonColor =
+          if (pidValues.value.pidType == PIDType.ROLL) Color.Red else Color.DarkGray
         LargeButton("Roll", rollButtonColor, Color.White, {
           pidValues.value = PIDValues(PIDType.ROLL)
           serialWorker?.enqueue(GetPIDSerialUnit(PIDType.ROLL))
@@ -263,15 +273,15 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       }
 
       val enabled = pidValues.value.initialized()
-      PidValueRow(enabled, { pv -> pv.p}, { inc ->
+      AdjustNumericValueRow(enabled, pidValues.value.p.toDouble(), { inc ->
         pidValues.value = pidValues.value.incP(inc)
         setPidAction.invoke()
       })
-      PidValueRow(enabled, {pv -> pv.i}, {inc ->
+      AdjustNumericValueRow(enabled, pidValues.value.i.toDouble(), { inc ->
         pidValues.value = pidValues.value.incI(inc)
         setPidAction.invoke()
       })
-      PidValueRow(enabled, {pv -> pv.d}, {inc ->
+      AdjustNumericValueRow(enabled, pidValues.value.d.toDouble(), { inc ->
         pidValues.value = pidValues.value.incD(inc)
         setPidAction.invoke()
       })
@@ -279,16 +289,11 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   }
 
   @Composable
-  fun DropDownDemo() {
+  fun Dropdown(options: List<String>, itemPosition: Int, onSelect: (Int) -> Unit) {
 
     val isDropDownExpanded = remember {
       mutableStateOf(false)
     }
-    val itemPosition = remember {
-      mutableStateOf(0)
-    }
-    val options = Setting.settings.map { it.name }
-
     val openDropdown = {
       isDropDownExpanded.value = true
     }
@@ -299,92 +304,119 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       verticalArrangement = Arrangement.Top
     ) {
 
-      Box (Modifier.padding(top = 34.dp)) {
-        Row(
-          horizontalArrangement = Arrangement.Center,
-          verticalAlignment = Alignment.CenterVertically,
-          modifier = Modifier.clickable(onClick = openDropdown)
+
+      Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable(onClick = openDropdown)
+      ) {
+        Box(
+          contentAlignment = Alignment.CenterStart,
+          modifier = Modifier
+            .height(42.dp)
+            .weight(1f)
+            .background(Color.DarkGray, shape = RoundedCornerShape(4.dp)),
         ) {
-          Box(
-            contentAlignment = Alignment.CenterStart,
-            modifier = Modifier
-              .height(42.dp)
-              .weight(1f)
-              .background(Color.DarkGray, shape = RoundedCornerShape(4.dp)),
-          ) {
-            Text(
-              text = options[itemPosition.value],
-              color = Color.White,
-              textAlign = TextAlign.Left,
-              modifier = Modifier.padding(start = 8.dp)
-            )
-          }
-          Box(Modifier.offset(x = -21.dp)) {
-            SimpleButton(imageVector = Icons.Filled.ArrowDropDown, onClick = openDropdown)
-          }
+          Text(
+            text = options[itemPosition],
+            color = Color.White,
+            textAlign = TextAlign.Left,
+            modifier = Modifier.padding(start = 8.dp)
+          )
         }
-        DropdownMenu(
-          expanded = isDropDownExpanded.value,
-          onDismissRequest = {
-            isDropDownExpanded.value = false
-          }) {
-          options.forEachIndexed { index, name ->
-            DropdownMenuItem(text = {
-              Text(text = name)
-            },
-              onClick = {
-                isDropDownExpanded.value = false
-                itemPosition.value = index
-              })
-          }
+        Box(Modifier.offset(x = -21.dp)) {
+          SimpleButton(imageVector = Icons.Filled.ArrowDropDown, onClick = openDropdown)
         }
       }
-
+      DropdownMenu(
+        expanded = isDropDownExpanded.value,
+        onDismissRequest = {
+          isDropDownExpanded.value = false
+        }) {
+        options.forEachIndexed { index, name ->
+          DropdownMenuItem(
+            text = {
+              Text(text = name)
+            },
+            onClick = {
+              isDropDownExpanded.value = false
+              onSelect(index)
+            })
+        }
+      }
     }
+
+
   }
 
   @Composable
   private fun ParamsPage() {
-    Column(
-      modifier = Modifier.fillMaxSize().padding(8.dp),
-      verticalArrangement = Arrangement.spacedBy(16.dp),
-      horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-      val items = listOf("Apple", "Banana", "Cherry")
-      var expanded = remember { mutableStateOf(false) }
-      var selectedText = remember { mutableStateOf(items[0]) }
-      pidValues = remember { mutableStateOf(PIDValues()) }
-      DropDownDemo()
-      //PidValueRow() { }
+    val itemPosition = remember {
+      mutableIntStateOf(0)
+    }
+    val setting = Setting.settings[itemPosition.intValue];
+    val settingState : MutableState<SettingValue<*>> = remember { mutableStateOf(SettingIntValue(0)) }
+    val options = Setting.settings.map { it.name }
+    val selectSetting: (Int) -> Unit = { itemPosition.intValue = it }
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+      Box(Modifier.height(32.dp))
+      Row(
+        modifier = Modifier
+          .height(64.dp)
+          .fillMaxWidth()
+          .padding(8.dp),
+      ) {
+        Dropdown(options, itemPosition.intValue, selectSetting)
+      }
+      Row (modifier = Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        if (settingState.value is SettingDoubleValue) {
+          val ss = settingState.value as SettingDoubleValue
+          AdjustNumericValueRow(true, ss.value, {settingState.value.adjust(it)})
+        } else if (settingState.value is SettingIntValue) {
+          val ss = settingState.value as SettingIntValue
+          AdjustNumericValueRow(true, ss.value.toDouble(), {settingState.value.adjust(it)}, inc1 = 1.0, inc2 = 10.0)
+        } else {
+          Text("Select a setting", color = Color.White)
+        }
+      }
     }
   }
 
   @Composable
-  private fun PidValueRow(enabled: Boolean, valueExt: (PIDValues)->Float, incFunc: (Float)->Unit) {
+  private fun AdjustNumericValueRow(
+    enabled: Boolean,
+    value: Double,
+    incFunc: (Double) -> Unit,
+    inc1: Double = 0.01,
+    inc2: Double = 0.1,
+  ) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      //val enabled = pidValues.value.initialized();
-      PidAdjustButton("--", Color.Black, {
-        incFunc.invoke(-0.1f)
+      if (inc2 != 0.0) {
+        AdjustValueButton("--", Color.Black, {
+          incFunc.invoke(-inc2)
+        }, enabled = enabled)
+      }
+      AdjustValueButton("-", Color.Black, {
+        incFunc.invoke(-inc1)
       }, enabled = enabled)
-      PidAdjustButton("-", Color.Black, {
-        incFunc.invoke(-0.01f)
+      AdjustedNumericValueBox(number = value)
+      AdjustValueButton("+", Color.Black, {
+        incFunc.invoke(inc1)
       }, enabled = enabled)
-      FloatingPointBox(number = valueExt.invoke(pidValues.value))
-      PidAdjustButton("+", Color.Black, {
-        incFunc.invoke(0.01f)
-      }, enabled = enabled)
-      PidAdjustButton("++", Color.Black, {
-        incFunc.invoke(0.1f)
-      }, enabled = enabled)
+      if (inc2 != 0.0) {
+        AdjustValueButton("++", Color.Black, {
+          incFunc.invoke(inc2)
+        }, enabled = enabled)
+      }
     }
   }
 
   @Composable
   private fun SidebarContent(
-    page : MutableState<ActivityPage>
+    page: MutableState<ActivityPage>
   ) {
     val showDialog = remember { mutableStateOf(false) }
     connectionStatus = remember { mutableStateOf(ConnectionStatus()) }
@@ -412,7 +444,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         connectionStatus.value = ConnectionStatus().toDisconnected()
       }, Icons.Default.Close)
       SimpleButton({ stepChartConfig(-1) }, Icons.Default.ArrowBack)
-      SimpleButton({ stepChartConfig(1)}, Icons.Default.ArrowForward)
+      SimpleButton({ stepChartConfig(1) }, Icons.Default.ArrowForward)
     }
 
     SidebarRow {
@@ -432,7 +464,10 @@ class MainActivity @Inject constructor() : ComponentActivity() {
 
     SidebarRow {
       //sinGeneratorButton()
-      SimpleImageButton({ sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) }, painterResource(R.drawable.robot))
+      SimpleImageButton(
+        { sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) },
+        painterResource(R.drawable.robot)
+      )
       SimpleButton({
         motorsEnabled.value = !motorsEnabled.value
         sendUnit(MotorToggleSerialUnit(motorsEnabled.value))
@@ -442,11 +477,12 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     Box(modifier = Modifier.fillMaxHeight()) {
       Joystick(modifier = Modifier.align(Alignment.Center), onMove = { x, y ->
         if (x == 0f && y == 0f) {
-          // Sending twice to ensure the zero value is sent without a transmission error
-          sendUnit(ControlSerialUnit(0f, 0f))
-          sendUnit(ControlSerialUnit(0f, 0f))
+          // Sending multiple times to ensure the zero value is sent without a transmission error
+          for (i in 0..6) {
+            sendUnit(ControlSerialUnit(0f, 0f))
+          }
         } else {
-          serialWorker?.enqueueAndDebounce(ControlSerialUnit(x, y), "ControlSerialUnit", 66)
+          serialWorker?.enqueueAndDebounce(ControlSerialUnit(x, y), "ControlSerialUnit", 50)
         }
       })
     }
@@ -455,7 +491,9 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   @Composable
   private fun SidebarRow(content: @Composable RowScope.() -> Unit) {
     Row(
-      modifier = Modifier.fillMaxWidth().padding(0.dp),
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(0.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.SpaceAround,
       content = content
@@ -467,16 +505,25 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       while (true) {
         val items = chartDataBacklog.getAndClear()
         for (i in items) {
-          timeSeriesWindow.addPoint(TimeSeriesType.ROLL.alias, Math.toDegrees(i.roll.toDouble()).toFloat() + 90f)
-          timeSeriesWindow.addPoint(TimeSeriesType.TARGET_ROLL.alias, Math.toDegrees(i.targetRoll.toDouble()).toFloat() + 90f)
+          timeSeriesWindow.addPoint(
+            TimeSeriesType.ROLL.alias,
+            Math.toDegrees(i.roll.toDouble()).toFloat() + 90f
+          )
+          timeSeriesWindow.addPoint(
+            TimeSeriesType.TARGET_ROLL.alias,
+            Math.toDegrees(i.targetRoll.toDouble()).toFloat() + 90f
+          )
           timeSeriesWindow.addPoint(TimeSeriesType.SPEED.alias, i.speed)
           timeSeriesWindow.addPoint(TimeSeriesType.TARGET_SPEED.alias, i.targetSpeed)
           timeSeriesWindow.addPoint(TimeSeriesType.MOTOR_LEFT_SPEED.alias, i.motorLeft)
           timeSeriesWindow.addPoint(TimeSeriesType.MOTOR_RIGHT_SPEED.alias, i.motorRight)
-          timeSeriesWindow.addPoint(TimeSeriesType.MOTOR_SCALED_ROLL_ERROR.alias, (i.targetRoll - i.roll) * 100 )
+          timeSeriesWindow.addPoint(
+            TimeSeriesType.MOTOR_SCALED_ROLL_ERROR.alias,
+            (i.targetRoll - i.roll) * 100
+          )
         }
         lineChart.invalidate()
-        delay(33);
+        delay(50);
       }
     }
   }
@@ -499,31 +546,70 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
           ) {
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.SLAV_CAT)) }, painterResource(R.drawable.cccp))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ZLAD)) }, painterResource(R.drawable.zlad))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CHARLIE)) }, painterResource(R.drawable.charlie))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CAT_KISS)) }, painterResource(R.drawable.catkiss))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.OIIUU_CAT)) }, painterResource(R.drawable.oiia))
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.SLAV_CAT)) },
+              painterResource(R.drawable.cccp)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ZLAD)) },
+              painterResource(R.drawable.zlad)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CHARLIE)) },
+              painterResource(R.drawable.charlie)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CAT_KISS)) },
+              painterResource(R.drawable.catkiss)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.OIIUU_CAT)) },
+              painterResource(R.drawable.oiia)
+            )
 
           }
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
           ) {
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.PEDRO_4X)) }, painterResource(R.drawable.pedro))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.RICK_ROLL)) }, painterResource(R.drawable.rickrolld))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) }, painterResource(R.drawable.robot))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.NYAN)) }, painterResource(R.drawable.rickrolld))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.MINECRAFT)) }, painterResource(R.drawable.rickrolld))
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.PEDRO_4X)) },
+              painterResource(R.drawable.pedro)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.RICK_ROLL)) },
+              painterResource(R.drawable.rickrolld)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) },
+              painterResource(R.drawable.robot)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.NYAN)) },
+              painterResource(R.drawable.rickrolld)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.MINECRAFT)) },
+              painterResource(R.drawable.rickrolld)
+            )
           }
 
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
           ) {
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.TARKOV)) }, painterResource(R.drawable.rickrolld))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CSIPKES)) }, painterResource(R.drawable.rickrolld))
-            SimpleImageButton({ onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.TROLOLO)) }, painterResource(R.drawable.rickrolld))
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.TARKOV)) },
+              painterResource(R.drawable.rickrolld)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CSIPKES)) },
+              painterResource(R.drawable.rickrolld)
+            )
+            SimpleImageButton(
+              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.TROLOLO)) },
+              painterResource(R.drawable.rickrolld)
+            )
           }
 
         }
@@ -537,7 +623,8 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   }
 
   private fun stepChartConfig(offset: Int = 1) {
-    chartConfigIndex = (chartConfigurations.size + chartConfigIndex + offset) % chartConfigurations.size
+    chartConfigIndex =
+      (chartConfigurations.size + chartConfigIndex + offset) % chartConfigurations.size
     val config = chartConfigurations[chartConfigIndex]
     serialWorker?.enqueue(TriggerSerialUnit(TriggerType.DIAGMODE, config.alias))
     lineChart.axisLeft.axisMinimum = config.minimumValue;
@@ -568,7 +655,17 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     serialWorker!!.subscribe(DG1SerialUnit::class.java) {
       CoroutineScope(Dispatchers.Default).launch {
         val dg1 = it as DG1SerialUnit
-        chartDataBacklog.add(DiagDataSerialUnit(dg1.seqNo, dg1.roll, dg1.targetRoll, 0.0f, 0.0f, 0.0f, 0.0f))
+        chartDataBacklog.add(
+          DiagDataSerialUnit(
+            dg1.seqNo,
+            dg1.roll,
+            dg1.targetRoll,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f
+          )
+        )
       }
     }
     serialWorker!!.subscribe(GetPIDResponseSerialUnit::class.java) {

@@ -17,7 +17,11 @@ enum class TriggerType {
   MINECRAFT,
   CSIPKES,
   TARKOV,
-  DIAGMODE
+  AXA,
+  SWEET_BROWN,
+  EMOTION_SAD,
+  EMOTION_LOVE,
+  DIAGMODE,
 }
 
 class TriggerSerialUnit (

@@ -253,6 +253,10 @@ void controlTask(void *pvParameters)
       dto.step16SpeedRight = step16SpeedRight;
       gstate.diagSender.send(dto);
 
+      if (dto.cycleNo % 8 == 0) {
+        Serial.println(gstate.speedAgg500.getSpeed());
+      }
+
       gstate.failSafe.heartBeat();
     }
 
