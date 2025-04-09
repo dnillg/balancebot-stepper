@@ -17,9 +17,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,8 +41,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -57,21 +55,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.dnillg.balancer.controlapp.bluetooth.BtConnection
+import com.dnillg.balancer.controlapp.components.AdjustEnumValueRow
+import com.dnillg.balancer.controlapp.components.AdjustIntegerValueRow
 import com.dnillg.balancer.controlapp.components.ConnectionBar
-import com.dnillg.balancer.controlapp.components.AdjustedNumericValueBox
 import com.dnillg.balancer.controlapp.components.Joystick
 import com.dnillg.balancer.controlapp.components.LargeButton
 import com.dnillg.balancer.controlapp.components.SimpleButton
 import com.dnillg.balancer.controlapp.components.SimpleImageButton
+import com.dnillg.balancer.controlapp.components.TriggerSelectorDialog
+import com.dnillg.balancer.controlapp.components.AdjustNumericValueRow
 import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesChartEntry
 import com.dnillg.balancer.controlapp.domain.chart.TimeSeriesType
 import com.dnillg.balancer.controlapp.domain.chart.chartConfigurations
@@ -80,7 +78,8 @@ import com.dnillg.balancer.controlapp.domain.model.PIDType
 import com.dnillg.balancer.controlapp.domain.model.PIDValues
 import com.dnillg.balancer.controlapp.domain.model.Setting
 import com.dnillg.balancer.controlapp.domain.model.SettingDoubleValue
-import com.dnillg.balancer.controlapp.domain.model.SettingIntValue
+import com.dnillg.balancer.controlapp.domain.model.SettingEnumValue
+import com.dnillg.balancer.controlapp.domain.model.SettingIntegerValue
 import com.dnillg.balancer.controlapp.domain.model.SettingValue
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
@@ -124,31 +123,26 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   lateinit var serialWorkerFactory: SerialWorkerFactory
 
   private val asyncJobs: MainActivityAsyncJobs = MainActivityAsyncJobs()
-  private val chartDataBacklog: ConcurrentSerialUnitBacklog<DiagDataSerialUnit> =
-    ConcurrentSerialUnitBacklog()
+  private val chartDataBacklog: ConcurrentSerialUnitBacklog<DiagDataSerialUnit> = ConcurrentSerialUnitBacklog()
   private val timeSeriesWindow = TimeSeriesWindow(
     duration = 5.0,
-    entryCreator = { timeSeries, value -> TimeSeriesChartEntry(timeSeries, value) },
+    entryCreator = { timeSeriesConfig, value -> TimeSeriesChartEntry(timeSeriesConfig, value) },
   )
   private lateinit var lineChart: LineChart;
 
-  // States
+  // Mutable Activity State
   private lateinit var connectionStatus: MutableState<ConnectionStatus>
   private lateinit var pidValues: MutableState<PIDValues>
   private var motorsEnabled: MutableState<Boolean> = mutableStateOf(false)
-
+  private var chartConfigIndex = 0;
+  // Bluetooth
   private var serialWorker: SerialWorker? = null
   private var btConnection: BtConnection? = null
-  private var chartConfigIndex = 0;
 
   init {
     TimeSeriesType.entries.forEach {
-      timeSeriesWindow.init(it.alias, 40)
+      timeSeriesWindow.init(it.alias, TIMESERIES_SAMPLES_PER_SECOND)
     }
-  }
-
-  private fun sendUnit(unit: SerialUnit) {
-    serialWorker?.enqueue(unit);
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -206,35 +200,6 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   }
 
   @Composable
-  fun AdjustValueButton(
-    text: String,
-    textColor: Color,
-    onClick: () -> Unit,
-    enabled: Boolean = true
-  ) {
-    val bgColor = if (enabled) Color.LightGray else Color.Gray
-    val effectiveOnClick: () -> Unit =
-      if (enabled) onClick else { -> Log.d(this::class.simpleName, "Disabled") }
-
-    Button(
-      onClick = effectiveOnClick,
-      colors = ButtonDefaults.buttonColors(containerColor = bgColor),
-      shape = RoundedCornerShape(8.dp),
-      contentPadding = PaddingValues(0.dp),
-      modifier = Modifier
-        .height(36.dp)
-        .width(36.dp)
-    ) {
-      Text(
-        text = text,
-        fontSize = 24.sp,
-        color = textColor,
-        fontWeight = FontWeight.Bold
-      )
-    }
-  }
-
-  @Composable
   private fun PidPage() {
     Column(
       modifier = Modifier
@@ -260,16 +225,16 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       ) {
         val rollButtonColor =
           if (pidValues.value.pidType == PIDType.ROLL) Color.Red else Color.DarkGray
-        LargeButton("Roll", rollButtonColor, Color.White, {
+        LargeButton("Roll", rollButtonColor, Color.White) {
           pidValues.value = PIDValues(PIDType.ROLL)
           serialWorker?.enqueue(GetPIDSerialUnit(PIDType.ROLL))
-        })
+        }
         val speedButtonColor =
           if (pidValues.value.pidType == PIDType.SPEED) Color.Red else Color.DarkGray
-        LargeButton("Speed", speedButtonColor, Color.White, {
+        LargeButton("Speed", speedButtonColor, Color.White) {
           pidValues.value = PIDValues(PIDType.SPEED)
           serialWorker?.enqueue(GetPIDSerialUnit(PIDType.SPEED))
-        })
+        }
       }
 
       val enabled = pidValues.value.initialized()
@@ -355,61 +320,35 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       mutableIntStateOf(0)
     }
     val setting = Setting.settings[itemPosition.intValue];
-    val settingState : MutableState<SettingValue<*>> = remember { mutableStateOf(SettingIntValue(0)) }
+    val valueState : MutableState<SettingValue<*>> = remember { mutableStateOf(SettingIntegerValue()) }
     val options = Setting.settings.map { it.name }
     val selectSetting: (Int) -> Unit = { itemPosition.intValue = it }
-    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+    val sv = valueState.value
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
       Box(Modifier.height(32.dp))
       Row(
         modifier = Modifier
-          .height(64.dp)
+          .height(42.dp)
           .fillMaxWidth()
-          .padding(8.dp),
       ) {
         Dropdown(options, itemPosition.intValue, selectSetting)
       }
-      Row (modifier = Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-        if (settingState.value is SettingDoubleValue) {
-          val ss = settingState.value as SettingDoubleValue
-          AdjustNumericValueRow(true, ss.value, {settingState.value.adjust(it)})
-        } else if (settingState.value is SettingIntValue) {
-          val ss = settingState.value as SettingIntValue
-          AdjustNumericValueRow(true, ss.value.toDouble(), {settingState.value.adjust(it)}, inc1 = 1.0, inc2 = 10.0)
-        } else {
-          Text("Select a setting", color = Color.White)
+      Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        if (sv is SettingDoubleValue) {
+          AdjustNumericValueRow(enabled = sv.initialized, sv.value?:0.0, {valueState.value = sv.withMultipliedValue(1 + it)})
+        } else if (sv is SettingIntegerValue) {
+          AdjustIntegerValueRow(enabled = sv.initialized, sv.value?:0, {valueState.value = sv.withAddedValue(it)}, inc1 = 1, inc2 = 10)
+        } else if (sv is SettingEnumValue) {
+          Text("...", color = Color.White)
+          if (sv.value != null) {
+            AdjustEnumValueRow(enabled = sv.initialized, sv.value) { valueState.value = sv.withValue(it) }
+          }
         }
       }
-    }
-  }
-
-  @Composable
-  private fun AdjustNumericValueRow(
-    enabled: Boolean,
-    value: Double,
-    incFunc: (Double) -> Unit,
-    inc1: Double = 0.01,
-    inc2: Double = 0.1,
-  ) {
-    Row(
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-      if (inc2 != 0.0) {
-        AdjustValueButton("--", Color.Black, {
-          incFunc.invoke(-inc2)
-        }, enabled = enabled)
-      }
-      AdjustValueButton("-", Color.Black, {
-        incFunc.invoke(-inc1)
-      }, enabled = enabled)
-      AdjustedNumericValueBox(number = value)
-      AdjustValueButton("+", Color.Black, {
-        incFunc.invoke(inc1)
-      }, enabled = enabled)
-      if (inc2 != 0.0) {
-        AdjustValueButton("++", Color.Black, {
-          incFunc.invoke(inc2)
-        }, enabled = enabled)
+      Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        LargeButton(text = "Read", Color.White, Color.Black) { sendUnit(TriggerSerialUnit(TriggerType.AXA)) }
+        Spacer(modifier = Modifier.width(12.dp))
+        LargeButton("Write", Color.Red, Color.Black, sv.initialized) { sendUnit(TriggerSerialUnit(TriggerType.AXA)) }
       }
     }
   }
@@ -422,12 +361,12 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     connectionStatus = remember { mutableStateOf(ConnectionStatus()) }
 
     if (showDialog.value) {
-      FullScreenDialogExample({ showDialog.value = false })
+      TriggerSelectorDialog({ showDialog.value = false }, { sendUnit(it) })
     }
 
     ConnectionBar(connectionStatus)
 
-    SidebarRow {
+    SidebarButtonRow {
       SimpleButton({
         connectBluetooth()
         if (btConnection != null) {
@@ -447,7 +386,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       SimpleButton({ stepChartConfig(1) }, Icons.Default.ArrowForward)
     }
 
-    SidebarRow {
+    SidebarButtonRow {
       SimpleButton(onClick = {
         page.value = ActivityPage.PARAM_ADJUST;
       }, imageVector = Icons.Filled.Settings)
@@ -462,7 +401,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       }, Icons.Default.MoreVert)
     }
 
-    SidebarRow {
+    SidebarButtonRow {
       //sinGeneratorButton()
       SimpleImageButton(
         { sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) },
@@ -489,7 +428,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   }
 
   @Composable
-  private fun SidebarRow(content: @Composable RowScope.() -> Unit) {
+  private fun SidebarButtonRow(content: @Composable RowScope.() -> Unit) {
     Row(
       modifier = Modifier
         .fillMaxWidth()
@@ -503,117 +442,28 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   private fun startChartRenderer() {
     asyncJobs.chartRenderer = CoroutineScope(Dispatchers.Main).launch {
       while (true) {
-        val items = chartDataBacklog.getAndClear()
-        for (i in items) {
-          timeSeriesWindow.addPoint(
-            TimeSeriesType.ROLL.alias,
-            Math.toDegrees(i.roll.toDouble()).toFloat() + 90f
-          )
-          timeSeriesWindow.addPoint(
-            TimeSeriesType.TARGET_ROLL.alias,
-            Math.toDegrees(i.targetRoll.toDouble()).toFloat() + 90f
-          )
-          timeSeriesWindow.addPoint(TimeSeriesType.SPEED.alias, i.speed)
-          timeSeriesWindow.addPoint(TimeSeriesType.TARGET_SPEED.alias, i.targetSpeed)
-          timeSeriesWindow.addPoint(TimeSeriesType.MOTOR_LEFT_SPEED.alias, i.motorLeft)
-          timeSeriesWindow.addPoint(TimeSeriesType.MOTOR_RIGHT_SPEED.alias, i.motorRight)
-          timeSeriesWindow.addPoint(
-            TimeSeriesType.MOTOR_SCALED_ROLL_ERROR.alias,
-            (i.targetRoll - i.roll) * 100
-          )
-        }
+        consumeBacklogAndFillChart()
         lineChart.invalidate()
         delay(50);
       }
     }
   }
 
-  @Composable
-  fun FullScreenDialogExample(onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-      Box(
-        modifier = Modifier
-          .background(Color.White, shape = RoundedCornerShape(16.dp))
-          .padding(16.dp)
-          .fillMaxHeight()
-          .fillMaxWidth()
-      ) {
-        Column(
-          verticalArrangement = Arrangement.spacedBy(16.dp),
-          horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-          ) {
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.SLAV_CAT)) },
-              painterResource(R.drawable.cccp)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ZLAD)) },
-              painterResource(R.drawable.zlad)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CHARLIE)) },
-              painterResource(R.drawable.charlie)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CAT_KISS)) },
-              painterResource(R.drawable.catkiss)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.OIIUU_CAT)) },
-              painterResource(R.drawable.oiia)
-            )
-
-          }
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-          ) {
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.PEDRO_4X)) },
-              painterResource(R.drawable.pedro)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.RICK_ROLL)) },
-              painterResource(R.drawable.rickrolld)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.ROBOT_FACE_STANDARD)) },
-              painterResource(R.drawable.robot)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.NYAN)) },
-              painterResource(R.drawable.rickrolld)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.MINECRAFT)) },
-              painterResource(R.drawable.rickrolld)
-            )
-          }
-
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-          ) {
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.TARKOV)) },
-              painterResource(R.drawable.rickrolld)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.CSIPKES)) },
-              painterResource(R.drawable.rickrolld)
-            )
-            SimpleImageButton(
-              { onDismiss(); sendUnit(TriggerSerialUnit(TriggerType.TROLOLO)) },
-              painterResource(R.drawable.rickrolld)
-            )
-          }
-
-        }
-      }
+  private suspend fun consumeBacklogAndFillChart() {
+    val items = chartDataBacklog.getAndClear()
+    for (i in items) {
+      timeSeriesWindow.addPoint(
+        TimeSeriesType.ROLL.alias,
+        Math.toDegrees(i.roll.toDouble()).toFloat() + 90f
+      )
+      timeSeriesWindow.addPoint(
+        TimeSeriesType.TARGET_ROLL.alias,
+        Math.toDegrees(i.targetRoll.toDouble()).toFloat() + 90f
+      )
+      timeSeriesWindow.addPoint(TimeSeriesType.SPEED.alias, i.speed)
+      timeSeriesWindow.addPoint(TimeSeriesType.TARGET_SPEED.alias, i.targetSpeed)
+      timeSeriesWindow.addPoint(TimeSeriesType.MOTOR_LEFT_SPEED.alias, i.motorLeft)
+      timeSeriesWindow.addPoint(TimeSeriesType.MOTOR_RIGHT_SPEED.alias, i.motorRight)
     }
   }
 
@@ -627,8 +477,10 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       (chartConfigurations.size + chartConfigIndex + offset) % chartConfigurations.size
     val config = chartConfigurations[chartConfigIndex]
     serialWorker?.enqueue(TriggerSerialUnit(TriggerType.DIAGMODE, config.alias))
+
     lineChart.axisLeft.axisMinimum = config.minimumValue;
     lineChart.axisLeft.axisMaximum = config.maximumValue;
+
     val lineData = LineData().apply {
       config.activeSeries.forEach {
         addDataSet(
@@ -637,6 +489,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         )
       }
     }
+
     lineChart.data = lineData
     lineChart.invalidate()
   }
@@ -703,7 +556,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         textColor = Color.White.toArgb()
       }
 
-      xAxis.axisMinimum = -5000f;
+      xAxis.axisMinimum = -1000f * CHART_TIME_SECONDS;
       xAxis.axisMaximum = 0f;
     }
   }
@@ -730,7 +583,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     pairedDevices?.forEach { device ->
       if (device.name.contains("balance")) {
         val onLoss = {
-          connectionStatus.value = ConnectionStatus().toDisconnected()
+          connectionStatus.value = ConnectionStatus().toUnhealthy()
         }
         val onRecovery = {
           connectionStatus.value = ConnectionStatus().toConnected()
@@ -748,6 +601,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       Log.e(this::class.simpleName, "Could not close BT connection", e)
     }
     btConnection = null;
+    serialWorker = null;
   }
 
   private fun hasBluetoothPermissions(): Boolean {
@@ -767,8 +621,14 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     )
   }
 
+  private fun sendUnit(unit: SerialUnit) {
+    serialWorker?.enqueue(unit);
+  }
+
   companion object {
     private const val BLUETOOTH_PERMISSION_REQUEST_CODE = 1001;
+    private const val TIMESERIES_SAMPLES_PER_SECOND = 40
+    private const val CHART_TIME_SECONDS = 5
   }
 
 }

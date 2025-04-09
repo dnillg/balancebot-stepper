@@ -1,5 +1,6 @@
 package com.dnillg.balancer.controlapp.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,16 +26,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+private val doNothing = {}
+
 @Composable
 fun LargeButton(
   text: String,
   buttonColor: Color,
   textColor: Color,
-  onClick: () -> Unit
+  enabled: Boolean = true,
+  onClick: () -> Unit,
 ) {
   Button(
-    onClick = onClick,
-    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+    onClick = (if (enabled) onClick else doNothing),
+    colors = ButtonDefaults.buttonColors(containerColor = (if (enabled) buttonColor else Color.Gray)),
     shape = RoundedCornerShape(8.dp),
     modifier = Modifier
       .height(48.dp)
@@ -42,21 +46,26 @@ fun LargeButton(
     Text(
       text = text,
       fontSize = 16.sp,
-      color = textColor,
+      color = (if (enabled) textColor else Color.Black),
       fontWeight = FontWeight.Bold
     )
   }
 }
 
 @Composable
-fun AdjustedNumericValueBox(number: Double) {
+fun NumericValueBox(number: Double) {
   val format = if (number < 1) "%.12f" else if (number < 10) "%.6f" else if (number < 1000) "%.4f" else "%.2f"
   val formattedNumber = String.format(format, number)
-  PidBox(modifier = Modifier.width(240.dp), text = formattedNumber)
+  ValueBox(modifier = Modifier.width(240.dp), text = formattedNumber)
 }
 
 @Composable
-private fun PidBox(modifier: Modifier = Modifier, text: String) {
+fun IntegerValueBox(number: Int) {
+  ValueBox(modifier = Modifier.width(240.dp), text = number.toString())
+}
+
+@Composable
+fun ValueBox(modifier: Modifier = Modifier, text: String) {
   Box(
     modifier = modifier
       .background(
@@ -95,6 +104,11 @@ fun SimpleButton(
       modifier = Modifier.size(32.dp)
     )
   }
+}
+
+@Composable
+fun GenericButton(action: () -> Unit, text: String, backgroundColor: Color) {
+
 }
 
 @Composable

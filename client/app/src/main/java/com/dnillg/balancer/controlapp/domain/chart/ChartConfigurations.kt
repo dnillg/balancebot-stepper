@@ -15,7 +15,6 @@ enum class TimeSeriesType(
   TARGET_SPEED("Target speed", "target-speed", Color.Yellow),
   MOTOR_LEFT_SPEED("Motor left speed", "motor-left-speed", Color.Magenta),
   MOTOR_RIGHT_SPEED("Motor right speed", "motor-right-speed", Color.Cyan),
-  MOTOR_SCALED_ROLL_ERROR("Motor Scaled Roll Error", "motor-scaled-roll-error", Color.Red),
 }
 
 data class ChartConfiguration(
@@ -50,17 +49,8 @@ val speedChartConfiguration = ChartConfiguration(
   alias = "SPEED"
 )
 
-val rollErrorMotorsChartConfiguration = ChartConfiguration(
-  title = "Roll Error & Motors",
-  minimumValue = -10000f,
-  maximumValue = 10000f,
-  activeSeries = listOf(TimeSeriesType.MOTOR_SCALED_ROLL_ERROR, TimeSeriesType.MOTOR_RIGHT_SPEED, TimeSeriesType.MOTOR_LEFT_SPEED),
-  alias = "ROLL_ERROR_MOTORS"
-)
-
 val chartConfigurations: List<ChartConfiguration> = listOf(
   offChartConfiguration,
   rollChartConfiguration,
   speedChartConfiguration,
-  rollErrorMotorsChartConfiguration
 )

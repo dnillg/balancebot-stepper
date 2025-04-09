@@ -22,50 +22,65 @@ data class Setting (
   }
 }
 
-interface SettingValue <T> {
-  val value: T
+abstract class SettingValue <T>(
+  val value: T?,
+  val initialized: Boolean
+) {
 
-  fun adjust(amount: Double)
+  abstract fun withValue(value: T) : SettingValue<T>
 }
 
 class SettingBooleanValue(
-  override var value: Boolean,
-) : SettingValue<Boolean>
+  value: Boolean = false,
+  initialized: Boolean = false
+) : SettingValue<Boolean>(value, initialized)
 {
-  override fun adjust(amount: Double) {
-    value = if (amount > 0) true else false
+  override fun withValue(value: Boolean) : SettingBooleanValue {
+    return SettingBooleanValue(value = value, initialized = true)
   }
 }
 
-class SettingIntValue(
-  override var value: Int,
-) : SettingValue<Int>
+class SettingIntegerValue(
+  value: Int = 0,
+  initialized: Boolean = false
+) : SettingValue<Int>(value, initialized)
 {
-  override fun adjust(amount: Double) {
-    value = (value + amount).toInt()
+  override fun withValue(value: Int) : SettingIntegerValue {
+    return SettingIntegerValue(value = value, initialized = true)
+  }
+
+  fun withAddedValue(value: Int) : SettingIntegerValue {
+    return SettingIntegerValue(value = this.value!! + value, initialized = true)
   }
 }
 
 class SettingDoubleValue(
-  override var value: Double,
-) : SettingValue<Double>
+  value: Double = 0.0,
+  initialized: Boolean = false
+) : SettingValue<Double>(value, initialized)
 {
-  override fun adjust(amount: Double) {
-    value += amount
+  override fun withValue(value: Double) : SettingDoubleValue {
+    return SettingDoubleValue(value = value, initialized = true)
+  }
+
+  fun WithAddedValue(value: Double) : SettingDoubleValue {
+    return SettingDoubleValue(value = this.value!! + value, initialized = true)
+  }
+
+  fun withMultipliedValue(value: Double) : SettingDoubleValue {
+    return SettingDoubleValue(value = this.value!! * value, initialized = true)
+  }
+
+}
+
+class SettingEnumValue(
+  value: Enum<*>? = null,
+  initialized: Boolean = false
+) : SettingValue<Enum<*>>(value, initialized)
+{
+  override fun withValue(value: Enum<*>) : SettingEnumValue {
+    return SettingEnumValue(value = value, initialized = true)
   }
 }
 
-class SettingEnumValue<T : Enum<T>>(
-  value: T,
-  private val enumClass: Class<T>,
-) : SettingValue<T> {
-  override var value: T = value
-    private set
 
-  override fun adjust(amount: Double) {
-    val enumSize = enumClass.enumConstants!!.size;
-    val offset = if (amount > 0) 1 else if (amount < 0) -1 else 0
-    val newOrdinal = (value.ordinal + offset) % enumSize
-    value = enumClass.enumConstants!![newOrdinal];
-  }
-}
