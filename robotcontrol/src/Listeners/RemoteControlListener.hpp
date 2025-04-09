@@ -3,9 +3,9 @@
 
 #include <Arduino.h>
 
-#include "../SerialUnits/SerialUnitProcessor.hpp"
-#include "../SerialUnits/SerialUnits.hpp"
-#include "../Control.hpp"
+#include "SerialUnits/SerialUnitProcessor.hpp"
+#include "SerialUnits/SerialUnits.hpp"
+#include "Control.hpp"
 
 class RemoteControlListener : public SerialUnitListener
 {

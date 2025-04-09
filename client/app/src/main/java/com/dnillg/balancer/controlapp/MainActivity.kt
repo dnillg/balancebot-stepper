@@ -77,15 +77,16 @@ import com.dnillg.balancer.controlapp.domain.model.ConnectionStatus
 import com.dnillg.balancer.controlapp.domain.model.PIDType
 import com.dnillg.balancer.controlapp.domain.model.PIDValues
 import com.dnillg.balancer.controlapp.domain.model.Setting
-import com.dnillg.balancer.controlapp.domain.model.SettingDoubleValue
+import com.dnillg.balancer.controlapp.domain.model.SettingDoubleState
 import com.dnillg.balancer.controlapp.domain.model.SettingEnumValue
-import com.dnillg.balancer.controlapp.domain.model.SettingIntegerValue
-import com.dnillg.balancer.controlapp.domain.model.SettingValue
+import com.dnillg.balancer.controlapp.domain.model.SettingIntegerState
+import com.dnillg.balancer.controlapp.domain.model.SettingState
 import com.dnillg.balancer.controlapp.serial.SerialWorker
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
 import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.DG1SerialUnit
 import com.dnillg.balancer.controlapp.serial.model.DiagDataSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.GetConfigResponseSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDResponseSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.MotorToggleSerialUnit
@@ -133,6 +134,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
   // Mutable Activity State
   private lateinit var connectionStatus: MutableState<ConnectionStatus>
   private lateinit var pidValues: MutableState<PIDValues>
+  private lateinit var settingValueState : MutableState<SettingState<*>>
   private var motorsEnabled: MutableState<Boolean> = mutableStateOf(false)
   private var chartConfigIndex = 0;
   // Bluetooth
@@ -319,11 +321,11 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     val itemPosition = remember {
       mutableIntStateOf(0)
     }
+    settingValueState = remember { mutableStateOf(SettingIntegerState()) }
     val setting = Setting.settings[itemPosition.intValue];
-    val valueState : MutableState<SettingValue<*>> = remember { mutableStateOf(SettingIntegerValue()) }
     val options = Setting.settings.map { it.name }
     val selectSetting: (Int) -> Unit = { itemPosition.intValue = it }
-    val sv = valueState.value
+    val sv = settingValueState.value
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
       Box(Modifier.height(32.dp))
       Row(
@@ -334,14 +336,14 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         Dropdown(options, itemPosition.intValue, selectSetting)
       }
       Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-        if (sv is SettingDoubleValue) {
-          AdjustNumericValueRow(enabled = sv.initialized, sv.value?:0.0, {valueState.value = sv.withMultipliedValue(1 + it)})
-        } else if (sv is SettingIntegerValue) {
-          AdjustIntegerValueRow(enabled = sv.initialized, sv.value?:0, {valueState.value = sv.withAddedValue(it)}, inc1 = 1, inc2 = 10)
+        if (sv is SettingDoubleState) {
+          AdjustNumericValueRow(enabled = sv.initialized, sv.value?:0.0, {settingValueState.value = sv.withMultipliedValue(1 + it)})
+        } else if (sv is SettingIntegerState) {
+          AdjustIntegerValueRow(enabled = sv.initialized, sv.value?:0, {settingValueState.value = sv.withAddedValue(it)}, inc1 = 1, inc2 = 10)
         } else if (sv is SettingEnumValue) {
           Text("...", color = Color.White)
           if (sv.value != null) {
-            AdjustEnumValueRow(enabled = sv.initialized, sv.value) { valueState.value = sv.withValue(it) }
+            AdjustEnumValueRow(enabled = sv.initialized, sv.value) { settingValueState.value = sv.withValue(it) }
           }
         }
       }
@@ -524,6 +526,9 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     serialWorker!!.subscribe(GetPIDResponseSerialUnit::class.java) {
       it as GetPIDResponseSerialUnit
       pidValues.value = PIDValues(it.type, it.p, it.i, it.d)
+    }
+    serialWorker!!.subscribe(GetConfigResponseSerialUnit::class.java) {
+
     }
     serialWorker!!.run();
   }

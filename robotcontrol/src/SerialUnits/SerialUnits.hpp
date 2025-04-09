@@ -28,6 +28,9 @@ enum SerialUnitAlias
   NOOP,                // No operation, not a serial unit
   DG1,                 // Diagnostic message (roll)
   DG2,                 // Diagnostic message (speed)
+  SETCONF,             // Set configuration value
+  GETCONF,             // Get configuration value
+  GETCONFRSP         // Response to GETCONF
 };
 
 // Mapping Enum to String
@@ -221,6 +224,49 @@ public:
   String toString() override;
   static ISerialUnit *fromLine(String line);
   int getState() { return state; }
+};
+
+class SetConfigSerialUnit : public ISerialUnit
+{
+private:
+  String name;
+  String value;
+public:
+  static const String LINE_PREFIX;
+  SetConfigSerialUnit(String, String);
+  SerialUnitAlias getAlias() override;
+  String toString() override;
+  static ISerialUnit *fromLine(String line);
+  String getName() { return name; }
+  String getValue() { return value; }
+};
+
+class GetConfigSerialUnit : public ISerialUnit
+{
+private:
+  String name;
+public:
+  static const String LINE_PREFIX;
+  GetConfigSerialUnit(String);
+  SerialUnitAlias getAlias() override;
+  String toString() override;
+  static ISerialUnit *fromLine(String line);
+  String getName() { return name; }
+};
+
+class GetConfigResponseSerialUnit : public ISerialUnit
+{
+private:
+  String name;
+  String value;
+public:
+  static const String LINE_PREFIX;
+  GetConfigResponseSerialUnit(String, String);
+  SerialUnitAlias getAlias() override;
+  String toString() override;
+  static ISerialUnit *fromLine(String line);
+  String getName() { return name; }
+  String getValue() { return value; }
 };
 
 class SerialUnitFactory

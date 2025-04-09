@@ -3,9 +3,9 @@
 
 #include <Arduino.h>
 
-#include "../SerialUnits/SerialUnitProcessor.hpp"
-#include "../Control.hpp"
-#include "../Motors.hpp"
+#include "SerialUnits/SerialUnitProcessor.hpp"
+#include "Control.hpp"
+#include "Motor/Motors.hpp"
 
 class ControlToggleListener : public SerialUnitListener
 {

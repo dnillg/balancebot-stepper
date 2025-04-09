@@ -27,6 +27,9 @@ const String SetPidSerialUnit::LINE_PREFIX = "SETPID>";
 const String MotorToggleSerialUnit::LINE_PREFIX = "MOTTOG>";
 const String UnknownSerialUnit::LINE_PREFIX = "UNKNOWN>";
 const String ParseErrorSerialUnit::LINE_PREFIX = "PARSE_ERROR>";
+const String SetConfigSerialUnit::LINE_PREFIX = "SETCONF>";
+const String GetConfigSerialUnit::LINE_PREFIX = "GETCONF>";
+const String GetConfigResponseSerialUnit::LINE_PREFIX = "GETCONFRSP>";
 
 // Unknown Serial Unit
 UnknownSerialUnit::UnknownSerialUnit(String value) : value(value) {}
@@ -230,6 +233,64 @@ ISerialUnit *SetPidSerialUnit::fromLine(String line)
 
   return new ParseErrorSerialUnit(line);
 }
+
+SetConfigSerialUnit::SetConfigSerialUnit(String name, String v) : name(name), value(v) {}
+SerialUnitAlias SetConfigSerialUnit::getAlias() { return SETCONF; }
+String SetConfigSerialUnit::toString() { return LINE_PREFIX + name + "," + value; }
+
+ISerialUnit *SetConfigSerialUnit::fromLine(String line)
+{
+  if (!line.startsWith(LINE_PREFIX))
+  {
+    return new ParseErrorSerialUnit(line); // Invalid format
+  }
+
+  char name[50], value[50] = {0};
+  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%49[^,],%49[^\n]", name, value) >= 1)
+  {
+    return new SetConfigSerialUnit(String(name), String(value));
+  }
+  return new ParseErrorSerialUnit(line);
+}
+
+GetConfigSerialUnit::GetConfigSerialUnit(String name) : name(name) {}
+SerialUnitAlias GetConfigSerialUnit::getAlias() { return GETCONF; }
+String GetConfigSerialUnit::toString() { return LINE_PREFIX + name; }
+
+ISerialUnit *GetConfigSerialUnit::fromLine(String line)
+{
+  if (!line.startsWith(LINE_PREFIX))
+  {
+    return new ParseErrorSerialUnit(line); // Invalid format
+  }
+
+  char name[50];
+  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%49s", name) == 1)
+  {
+    return new GetConfigSerialUnit(String(name));
+  }
+  return new ParseErrorSerialUnit(line);
+}
+
+GetConfigResponseSerialUnit::GetConfigResponseSerialUnit(String name, String value) : name(name), value(value) {}
+SerialUnitAlias GetConfigResponseSerialUnit::getAlias() { return GETCONF; }
+String GetConfigResponseSerialUnit::toString() { return LINE_PREFIX + name + "," + value; }
+
+ISerialUnit *GetConfigResponseSerialUnit::fromLine(String line)
+{
+  if (!line.startsWith(LINE_PREFIX))
+  {
+    return new ParseErrorSerialUnit(line); // Invalid format
+  }
+
+  char name[50], value[50] = {0};
+  if (sscanf(line.c_str() + LINE_PREFIX.length(), "%49[^,],%49[^\n]", name, value) >= 1)
+  {
+    return new GetConfigResponseSerialUnit(String(name), String(value));
+  }
+  return new ParseErrorSerialUnit(line);
+}
+
 
 ISerialUnit *SerialUnitFactory::fromLine(const String &line)
 {

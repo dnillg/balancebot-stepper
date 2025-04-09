@@ -2,13 +2,17 @@ package com.dnillg.balancer.controlapp
 
 import com.dnillg.balancer.controlapp.serial.SerialIO
 import com.dnillg.balancer.controlapp.serial.SerialWorkerFactory
+import com.dnillg.balancer.controlapp.serial.model.SetConfigSerialUnit
 import com.dnillg.balancer.controlapp.serial.serialization.ControlSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.DG1Serializer
 import com.dnillg.balancer.controlapp.serial.serialization.DiagDataSerializer
+import com.dnillg.balancer.controlapp.serial.serialization.GetConfigResponseSerialUnitSerializer
+import com.dnillg.balancer.controlapp.serial.serialization.GetConfigSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.GetPIDResponseSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.GetPIDSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.MotorToggleSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.SerialUnitSerializer
+import com.dnillg.balancer.controlapp.serial.serialization.SetConfigSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.SetPIDSerialUnitSerializer
 import com.dnillg.balancer.controlapp.serial.serialization.TriggerSerialUnitSerializer
 import dagger.Module
@@ -28,6 +32,9 @@ class MainModule {
         serializers.add(ControlSerialUnitSerializer())
         serializers.add(TriggerSerialUnitSerializer())
         serializers.add(MotorToggleSerialUnitSerializer())
+        serializers.add(GetConfigSerialUnitSerializer())
+        serializers.add(GetConfigResponseSerialUnitSerializer())
+        serializers.add(SetConfigSerialUnitSerializer())
         return SerialIO(serializers = serializers)
     }
 

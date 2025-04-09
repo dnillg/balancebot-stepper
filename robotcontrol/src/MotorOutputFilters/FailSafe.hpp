@@ -2,7 +2,7 @@
 #define FAILSAFE_H_
 
 #include <Arduino.h>
-#include "MotorPosition.hpp"
+#include "Motor/MotorPosition.hpp"
 #include "MotorOutputFilter.hpp"
 #include "config.h"
 

@@ -2,7 +2,8 @@
 #define MOTOR_OUTPUT_FILTER_HPP
 
 #include <Arduino.h>
-#include "MotorPosition.hpp"
+
+#include "Motor/MotorPosition.hpp"
 
 class MotorOutputFilter
 {

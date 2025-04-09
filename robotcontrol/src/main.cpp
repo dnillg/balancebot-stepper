@@ -8,7 +8,7 @@
 
 #include "config.h"
 #include "IMU.h"
-#include "Motor.hpp"
+#include "Motor/Motor.hpp"
 #include "SpeedAggregator.hpp"
 #include "models/MotorOutput.hpp"
 #include "Control.hpp"
@@ -16,14 +16,15 @@
 #include "MotorOutputFilters/FailSafe.hpp"
 #include "MotorOutputFilters/StationaryCutoff.hpp"
 #include "SerialUnits/SerialUnits.hpp"
-#include "MotorPosition.hpp"
-#include "Motors.hpp"
+#include "Motor/MotorPosition.hpp"
+#include "Motor/Motors.hpp"
 #include "SerialUnits/SerialUnitProcessor.hpp"
 #include "Listeners/ControlToggleListener.hpp"
 #include "Listeners/RemoteControlListener.hpp"
 #include "Listeners/DiagTriggerListener.hpp"
 #include "Listeners/GetPidListener.hpp"
 #include "Listeners/SetPidListener.hpp"
+#include "Listeners/GetConfigListener.hpp"
 
 // ----------------------------------------------------------------------------
 // Function Declarations
@@ -69,6 +70,7 @@ struct GlobalState
   DiagTriggerListener diagTriggerListener = DiagTriggerListener(&diagSender);
   GetPidListener getPidListener = GetPidListener(&control, &ioSerial);
   SetPidListener setPidListener = SetPidListener(&control);
+  GetConfigListener getConfigListener = GetConfigListener(&ioSerial, &motors);
 };
 
 GlobalState gstate;
@@ -157,6 +159,7 @@ void setup()
   gstate.serialUnitProcessor.addListener(&gstate.diagTriggerListener);
   gstate.serialUnitProcessor.addListener(&gstate.getPidListener);
   gstate.serialUnitProcessor.addListener(&gstate.setPidListener);
+  gstate.serialUnitProcessor.addListener(&gstate.getConfigListener);
 
   #if IO_SERIAL_ENABLED == true
   Serial.println("Initializing IO Serial");

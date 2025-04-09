@@ -16,7 +16,9 @@
         "functional": "cpp",
         "string": "cpp",
         "optional": "cpp",
-        "new": "cpp"
+        "new": "cpp",
+        "cstddef": "cpp",
+        "limits": "cpp"
     },
     "editor.tabSize": 2,
     "editor.insertSpaces": true
