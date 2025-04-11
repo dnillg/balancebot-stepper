@@ -4,8 +4,10 @@ void SerialUnitProcessor::process(const SerialUnitAlias alias, const String &lin
 {
   if (serialUnitListeners.find(alias) == serialUnitListeners.end())
   {
+    Serial.println("No listeners for alias: " + alias);
     return;
   }
+  Serial.println("Processing line: " + line);
   ISerialUnit *unit = SerialUnitFactory::fromLine(line);
   if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
     if (backlog.size() >= 10)
@@ -15,7 +17,7 @@ void SerialUnitProcessor::process(const SerialUnitAlias alias, const String &lin
     }
     else
     {
-    backlog.push_back(unit);
+      backlog.push_back(unit); //TODO: mutex
     }
     xSemaphoreGive(mutex);
   }

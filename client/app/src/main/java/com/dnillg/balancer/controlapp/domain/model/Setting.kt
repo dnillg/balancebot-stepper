@@ -3,32 +3,26 @@ package com.dnillg.balancer.controlapp.domain.model
 data class Setting (
   val id: String,
   val name: String,
-  val stateClazz: Class<out SettingState<*>>,
+  val stateClazz: (Setting) -> SettingState<*>,
 ) {
 
   fun createState() : SettingState<*> {
-    return when (stateClazz) {
-      SettingBooleanState::class.java -> SettingBooleanState(this)
-      SettingIntegerState::class.java -> SettingIntegerState(this)
-      SettingDoubleState::class.java -> SettingDoubleState(this)
-      SettingEnumValue::class.java -> SettingEnumValue(this)
-      else -> throw IllegalArgumentException("Unknown state class: $stateClazz")
-    }
+    return stateClazz.invoke(this);
   }
 
   companion object {
     val settings = listOf(
-      Setting("TMC_RSENSE", "TMC5160T: R-Sense", SettingIntegerState::class.java),
-      Setting("TMC_TOFF", "TMC5160T: TOFF", SettingIntegerState::class.java),
-      Setting("TMC_IRUN", "TMC5160T: IRUN", SettingIntegerState::class.java),
-      Setting("TMC_IHOLD", "TMC5160T: IHOLD", SettingIntegerState::class.java),
-      Setting("TMC_IHOLDDELAY", "TMC5160T: IHOLDDELAY", SettingIntegerState::class.java),
-      Setting("MAX_MOT_SPEED", "Max. Motor Speed", SettingIntegerState::class.java),
-      Setting("MAX_MOT_ACC", "Max. Motor Acceleration", SettingIntegerState::class.java),
-      Setting("BALANCE_ROLL", "Balance Target Roll", SettingDoubleState::class.java),
-      Setting("MAX_TARGET_ROLL_OFFSET", "Remote Control: Roll Offset", SettingIntegerState::class.java),
-      Setting("MAX_TARGET_SPEED", "Remote Control: Max Speed", SettingIntegerState::class.java),
-      Setting("MAX_STEER_OFFSET", "Remote Control: Max. Steer Offset", SettingIntegerState::class.java),
+      Setting("TMC_RSENSE", "TMC5160T: R-Sense") { setting -> SettingIntegerState(setting) },
+      Setting("TMC_TOFF", "TMC5160T: TOFF") { setting -> SettingIntegerState(setting) },
+      Setting("TMC_IRUN", "TMC5160T: IRUN") { setting -> SettingIntegerState(setting) },
+      Setting("TMC_IHOLD", "TMC5160T: IHOLD", { setting -> SettingIntegerState(setting) }),
+      Setting("TMC_IHOLDDELAY", "TMC5160T: IHOLDDELAY") { setting -> SettingIntegerState(setting) },
+      Setting("MAX_MOT_SPEED", "Max. Motor Speed") { setting -> SettingIntegerState(setting) },
+      Setting("MAX_MOT_ACC", "Max. Motor Acceleration") { setting -> SettingIntegerState(setting) },
+      Setting("BALANCE_ROLL", "Balance Target Roll") { setting -> SettingIntegerState(setting) },
+      Setting("MAX_TARGET_ROLL_OFFSET", "Remote Control: Roll Offset") { setting -> SettingIntegerState(setting) },
+      Setting("MAX_TARGET_SPEED", "Remote Control: Max Speed") { setting -> SettingIntegerState(setting) },
+      Setting("MAX_STEER_OFFSET", "Remote Control: Max. Steer Offset") { setting -> SettingIntegerState(setting) },
     )
   }
 }
@@ -90,13 +84,17 @@ class SettingDoubleState(
 
 class SettingEnumValue(
   setting: Setting,
-  value: Enum<*>? = null,
+  val clazz: Class<Enum<*>>,
+  value: String? = null,
+  val enumValue: Enum<*>? = null,
   initialized: Boolean = false
-) : SettingState<Enum<*>>(setting, value, initialized)
+) : SettingState<String>(setting, value, initialized)
 {
-  override fun withValue(value: Enum<*>) : SettingEnumValue {
-    return SettingEnumValue(setting, value = value, initialized = true)
+  override fun withValue(value: String) : SettingEnumValue {
+    val enumValue = clazz.enumConstants!!.first { it.name == value }
+    return SettingEnumValue(setting, clazz = clazz, value = enumValue.name, enumValue, initialized = true)
   }
+
 }
 
 

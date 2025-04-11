@@ -13,6 +13,11 @@ const std::map<SerialUnitAlias, std::string> SerialUnitAliasMap = {
     {SETPID, "SETPID"},
     {MOTTOG, "MOTTOG"},
     {TRIG, "TRIG"},
+    {DG1, "DG1"},
+    {DG2, "DG2"},
+    {SETCONF, "SETCONF"},
+    {GETCONF, "GETCONF"},
+    {GETCONFRSP, "GETCONFRSP"},
     {NOOP, "NOOP"}
   };
 
@@ -324,7 +329,28 @@ ISerialUnit *SerialUnitFactory::fromLine(const String &line)
   {
     return MotorToggleSerialUnit::fromLine(line);
   }
+  else if (alias == SETCONF)
+  {
+    return SetConfigSerialUnit::fromLine(line);
+  }
+  else if (alias == GETCONF)
+  {
+    return GetConfigSerialUnit::fromLine(line);
+  }
+  else if (alias == GETCONFRSP)
+  {
+    return GetConfigResponseSerialUnit::fromLine(line);
+  }
+  else if (alias == DG1)
+  {
+    return DG1SerialUnit::fromLine(line);
+  }
+  else if (alias == DG2)
+  {
+    return DG2SerialUnit::fromLine(line);
+  }
 
+  Serial.println("Unknown Serial Unit: " + line);
   return new NoopSerialUnit();
 };
 
@@ -357,6 +383,26 @@ SerialUnitAlias SerialUnitFactory::readAlias(const String &line)
   else if (line.startsWith(MotorToggleSerialUnit::LINE_PREFIX))
   {
     return MOTTOG;
+  }
+  else if (line.startsWith(SetConfigSerialUnit::LINE_PREFIX))
+  {
+    return SETCONF;
+  }
+  else if (line.startsWith(GetConfigSerialUnit::LINE_PREFIX))
+  {
+    return GETCONF;
+  }
+  else if (line.startsWith(GetConfigResponseSerialUnit::LINE_PREFIX))
+  {
+    return GETCONFRSP;
+  }
+  else if (line.startsWith(DG1SerialUnit::LINE_PREFIX))
+  {
+    return DG1;
+  }
+  else if (line.startsWith(DG2SerialUnit::LINE_PREFIX))
+  {
+    return DG2;
   }
 
   int bracketPos = indexOfCharInFirstN(line, '>', 12);

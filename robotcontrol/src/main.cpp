@@ -25,6 +25,7 @@
 #include "Listeners/GetPidListener.hpp"
 #include "Listeners/SetPidListener.hpp"
 #include "Listeners/GetConfigListener.hpp"
+#include "Listeners/SetConfigListener.hpp"
 
 // ----------------------------------------------------------------------------
 // Function Declarations
@@ -71,6 +72,7 @@ struct GlobalState
   GetPidListener getPidListener = GetPidListener(&control, &ioSerial);
   SetPidListener setPidListener = SetPidListener(&control);
   GetConfigListener getConfigListener = GetConfigListener(&ioSerial, &motors);
+  SetConfigListener setConfigListener = SetConfigListener(&ioSerial, &motors);
 };
 
 GlobalState gstate;
@@ -160,6 +162,7 @@ void setup()
   gstate.serialUnitProcessor.addListener(&gstate.getPidListener);
   gstate.serialUnitProcessor.addListener(&gstate.setPidListener);
   gstate.serialUnitProcessor.addListener(&gstate.getConfigListener);
+  gstate.serialUnitProcessor.addListener(&gstate.setConfigListener);
 
   #if IO_SERIAL_ENABLED == true
   Serial.println("Initializing IO Serial");
@@ -256,9 +259,9 @@ void controlTask(void *pvParameters)
       dto.step16SpeedRight = step16SpeedRight;
       gstate.diagSender.send(dto);
 
-      if (dto.cycleNo % 8 == 0) {
-        Serial.println(gstate.speedAgg500.getSpeed());
-      }
+      // if (dto.cycleNo % 8 == 0) {
+      //   Serial.println(gstate.speedAgg500.getSpeed());
+      // }
 
       gstate.failSafe.heartBeat();
     }

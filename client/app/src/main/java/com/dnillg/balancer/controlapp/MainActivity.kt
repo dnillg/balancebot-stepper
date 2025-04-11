@@ -87,13 +87,16 @@ import com.dnillg.balancer.controlapp.serial.model.ControlSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.DG1SerialUnit
 import com.dnillg.balancer.controlapp.serial.model.DiagDataSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetConfigResponseSerialUnit
+import com.dnillg.balancer.controlapp.serial.model.GetConfigSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDResponseSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.GetPIDSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.MotorToggleSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.SerialUnit
+import com.dnillg.balancer.controlapp.serial.model.SetConfigSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.SetPIDSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.TriggerSerialUnit
 import com.dnillg.balancer.controlapp.serial.model.TriggerType
+import com.dnillg.balancer.controlapp.serial.serialization.GetConfigSerialUnitSerializer
 import com.dnillg.balancer.controlapp.timeseries.TimeSeriesWindow
 import com.dnillg.balancer.controlapp.ui.theme.ControlAppTheme
 import com.github.mikephil.charting.charts.LineChart
@@ -308,6 +311,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
             onClick = {
               isDropDownExpanded.value = false
               onSelect(index)
+              settingValueState.value = Setting.settings[index].createState()
             })
         }
       }
@@ -321,8 +325,7 @@ class MainActivity @Inject constructor() : ComponentActivity() {
     val itemPosition = remember {
       mutableIntStateOf(0)
     }
-    settingValueState = remember { mutableStateOf(SettingIntegerState()) }
-    val setting = Setting.settings[itemPosition.intValue];
+    settingValueState = remember { mutableStateOf(SettingIntegerState(Setting.settings[0])) }
     val options = Setting.settings.map { it.name }
     val selectSetting: (Int) -> Unit = { itemPosition.intValue = it }
     val sv = settingValueState.value
@@ -343,14 +346,14 @@ class MainActivity @Inject constructor() : ComponentActivity() {
         } else if (sv is SettingEnumValue) {
           Text("...", color = Color.White)
           if (sv.value != null) {
-            AdjustEnumValueRow(enabled = sv.initialized, sv.value) { settingValueState.value = sv.withValue(it) }
+            AdjustEnumValueRow(enabled = sv.initialized, sv.enumValue!!) { settingValueState.value = sv.withValue(it.name) }
           }
         }
       }
       Row (modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-        LargeButton(text = "Read", Color.White, Color.Black) { sendUnit(TriggerSerialUnit(TriggerType.AXA)) }
+        LargeButton(text = "Read", Color.White, Color.Black) { sendUnit(GetConfigSerialUnit(sv.setting.id)) }
         Spacer(modifier = Modifier.width(12.dp))
-        LargeButton("Write", Color.Red, Color.Black, sv.initialized) { sendUnit(TriggerSerialUnit(TriggerType.AXA)) }
+        LargeButton("Write", Color.Red, Color.Black, sv.initialized) { sendUnit(SetConfigSerialUnit(sv.setting.id, sv.value.toString())) }
       }
     }
   }
@@ -528,6 +531,17 @@ class MainActivity @Inject constructor() : ComponentActivity() {
       pidValues.value = PIDValues(it.type, it.p, it.i, it.d)
     }
     serialWorker!!.subscribe(GetConfigResponseSerialUnit::class.java) {
+      it as GetConfigResponseSerialUnit
+      val currentState = settingValueState.value
+      if (currentState.setting.id.equals(it.name)) {
+        if (currentState is SettingIntegerState) {
+          settingValueState.value = currentState.withValue(it.value.toInt())
+        } else if (currentState is SettingDoubleState) {
+          settingValueState.value = currentState.withValue(it.value.toDouble())
+        } else if (currentState is SettingEnumValue) {
+          settingValueState.value = currentState.withValue(it.value)
+        }
+      }
 
     }
     serialWorker!!.run();
