@@ -19,10 +19,13 @@ data class Setting (
       Setting("TMC_IHOLDDELAY", "TMC5160T: IHOLDDELAY") { setting -> SettingIntegerState(setting) },
       Setting("MAX_MOT_SPEED", "Max. Motor Speed") { setting -> SettingIntegerState(setting) },
       Setting("MAX_MOT_ACC", "Max. Motor Acceleration") { setting -> SettingIntegerState(setting) },
-      Setting("BALANCE_ROLL", "Balance Target Roll") { setting -> SettingIntegerState(setting) },
-      Setting("MAX_TARGET_ROLL_OFFSET", "Remote Control: Roll Offset") { setting -> SettingIntegerState(setting) },
+      Setting("BALANCE_ROLL", "Balance Target Roll") { setting -> SettingDoubleState(setting) },
       Setting("MAX_TARGET_SPEED", "Remote Control: Max Speed") { setting -> SettingIntegerState(setting) },
-      Setting("MAX_STEER_OFFSET", "Remote Control: Max. Steer Offset") { setting -> SettingIntegerState(setting) },
+      Setting("MAX_STEER_OFFSET", "Remote Control: Max. Steer Offset") { setting -> SettingDoubleState(setting) },
+      Setting("ROLL_PID_OUTPUT_LIMIT", "ROLL PID: Limit") { setting -> SettingDoubleState(setting) },
+      Setting("ROLL_PID_OUTPUT_ACC", "ROLL PID: Acceleration") { setting -> SettingDoubleState(setting) },
+      Setting("SPEED_PID_OUTPUT_LIMIT", "SPEED PID: Limit") { setting -> SettingDoubleState(setting) },
+      Setting("SPEED_PID_OUTPUT_ACC", "SPEED PID: Acceleration") { setting -> SettingDoubleState(setting) },
     )
   }
 }

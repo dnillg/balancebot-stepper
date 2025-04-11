@@ -54,7 +54,7 @@ fun LargeButton(
 
 @Composable
 fun NumericValueBox(number: Double) {
-  val format = if (number < 1) "%.12f" else if (number < 10) "%.6f" else if (number < 1000) "%.4f" else "%.2f"
+  val format = if (number < 1) "%.10f" else if (number < 10) "%.6f" else if (number < 1000) "%.4f" else "%.2f"
   val formattedNumber = String.format(format, number)
   ValueBox(modifier = Modifier.width(240.dp), text = formattedNumber)
 }

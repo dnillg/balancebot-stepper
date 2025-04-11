@@ -71,8 +71,8 @@ struct GlobalState
   DiagTriggerListener diagTriggerListener = DiagTriggerListener(&diagSender);
   GetPidListener getPidListener = GetPidListener(&control, &ioSerial);
   SetPidListener setPidListener = SetPidListener(&control);
-  GetConfigListener getConfigListener = GetConfigListener(&ioSerial, &motors);
-  SetConfigListener setConfigListener = SetConfigListener(&ioSerial, &motors);
+  GetConfigListener getConfigListener = GetConfigListener(&ioSerial, &motors, &control);
+  SetConfigListener setConfigListener = SetConfigListener(&ioSerial, &motors, &control);
 };
 
 GlobalState gstate;

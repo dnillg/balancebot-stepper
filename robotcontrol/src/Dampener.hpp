@@ -6,7 +6,7 @@
 class Dampener
 {
 private:
-  double controlPeriodMillis;
+  double controlFrequency;
   double maxAccPerSec;
   double maxAccPerPeriod;
 
@@ -16,6 +16,14 @@ public:
   uint16_t getMaxAccPerPeriod() {
     return maxAccPerPeriod;
   }
+  double getMaxAccPerSec() {
+    return maxAccPerSec;
+  }
+  void setMaxAccPerSec(double maxAccPerSec) {
+    this->maxAccPerSec = maxAccPerSec;
+    this->maxAccPerPeriod = ((double) maxAccPerSec) / controlFrequency;
+  }
+
 };
 
 #endif // DAMPENER_HPP_

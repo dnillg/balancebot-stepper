@@ -21,9 +21,18 @@ struct PidParams
   double kd;
 };
 
+struct ControlConfig {
+  double balanceRoll = CONTROL_TARGET_ROLL;
+  double speedPidOutputLimit = CONTROL_MAX_SPEED_ROLL_RAD_OFFSET;
+  uint16_t maxTargetSpeed = CONTROL_MAX_TARGET_STEP16_SPEED;
+  double maxSteerOffset = CONTROL_MAX_STEER_STEP16_OFFSET;
+  double balanceOutputLimit = CONTROL_MAX_STEP16_SPEED;
+};
+
 class Control
 {
 private:
+  ControlConfig config;
   bool enabled = false;
   bool resetFlag = false;
   ControlMode mode = IDLE;
@@ -90,12 +99,58 @@ public:
     params.kd = speedPID.GetKd();
     return params;
   }
+  // <Configuration>
+  void setBalanceRoll(double roll) {
+    this->config.balanceRoll = roll;
+  }
+  double getBalanceRoll() {
+    return this->config.balanceRoll;
+  }
+  void setSpeedPidOutputLimit(double rads) {
+    this->config.speedPidOutputLimit = rads;
+    this->speedPID.SetOutputLimits(-rads, rads);
+  }
+  double getSpeedPidOutputLimit() {
+    return this->config.speedPidOutputLimit;
+  }
+  void setMaxTargetSpeed(double speed) {
+    this->config.maxTargetSpeed = speed;
+  }
+  double getMaxTargetSpeed() {
+    return this->config.maxTargetSpeed;
+  }
+  void setMaxSteerOffset(double offset) {
+    this->config.maxSteerOffset = offset;
+  }
+  double getMaxSteerOffset() {
+    return this->config.maxSteerOffset;
+  }
+  double getMaxRollPidOutputAcceleration() {
+    return this->rollPidOutputDampener.getMaxAccPerSec();
+  }
+  void setMaxRollPidOutputAcceleration(double maxAcc) {
+    this->rollPidOutputDampener.setMaxAccPerSec(maxAcc);
+  }
+  double getMaxSpeedPidOutputAcceleration() {
+    return this->speedPidOutputDampener.getMaxAccPerSec();
+  }
+  void setMaxSpeedPidOutputAcceleration(double maxAcc) {
+    this->speedPidOutputDampener.setMaxAccPerSec(maxAcc);
+  }
+  void setRollPidOutputLimit(double limit) {
+    this->config.balanceOutputLimit = limit;
+    this->rollPID.SetOutputLimits(-limit, limit);
+  }
+  double getRollPidOutputLimit() {
+    return this->config.balanceOutputLimit;
+  }
+  // </Configuration>
   inline void setRemoteControlInput(double speed, double steer)
   {
     this->input.targetSpeedProportion = speed;
     this->input.steerProportion = steer;
-    this->input.step16SpeedSetpoint = threshold(speed, 0.15) * CONTROL_MAX_ROLL_SPEED_STEPS;
-    this->input.steerOffset = threshold(steer, 0.25) * CONTROL_MAX_STEER_STEP16_OFFSET;
+    this->input.step16SpeedSetpoint = threshold(speed, 0.15) * config.maxTargetSpeed;
+    this->input.steerOffset = threshold(steer, 0.25) * config.maxSteerOffset;
   }
   const ControlInput& getInput() const {
     return input;

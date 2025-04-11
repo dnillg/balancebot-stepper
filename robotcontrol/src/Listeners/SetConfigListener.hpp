@@ -11,19 +11,22 @@ class SetConfigListener : public SerialUnitListener
 private:
   HardwareSerial *serial;
   Motors *motors;
+  Control *control;
+
 public:
-  SetConfigListener(HardwareSerial *serial, Motors *m) : serial(serial), motors(m), SerialUnitListener(SerialUnitAlias::SETCONF) {}
+  SetConfigListener(HardwareSerial *serial, Motors *m, Control *c) : serial(serial), motors(m), control(c), SerialUnitListener(SerialUnitAlias::SETCONF) {}
   void consume(ISerialUnit *unit) override
   {
     if (unit->getAlias() == SerialUnitAlias::SETCONF)
     {
       auto setConfigSerialUnit = static_cast<SetConfigSerialUnit *>(unit);
       setConfig(setConfigSerialUnit->getName(), setConfigSerialUnit->getValue());
-      //Serial.println(response);
-      //this->serial->println(response);
+      // Serial.println(response);
+      // this->serial->println(response);
     }
   }
-  String setConfig(String name, String value) {
+  String setConfig(String name, String value)
+  {
     if (name == "TMC_TOFF")
     {
       motors->setTOFF(value.toInt());
@@ -40,7 +43,7 @@ public:
     {
       motors->setIRUN(value.toInt());
     }
-    else if (name == "TMC_IHOLDD")
+    else if (name == "TMC_IHOLDDELAY")
     {
       motors->setIHOLDD(value.toInt());
     }
@@ -56,19 +59,53 @@ public:
     {
       motors->setMaxSpeed(value.toFloat());
     }
-    else if (name == "MAX_MOT_ACCELERATION")
+    else if (name == "MAX_MOT_ACC")
     {
       motors->setMaxAcceleration(value.toFloat());
     }
-    
+    else if (name == "BALANCE_ROLL")
+    {
+      control->setBalanceRoll(value.toFloat());
+    }
+    else if (name == "MAX_TARGET_SPEED")
+    {
+      control->setMaxTargetSpeed(value.toFloat());
+    }
+    else if (name == "MAX_STEER_OFFSET")
+    {
+      control->setMaxSteerOffset(value.toFloat());
+    }
+    else if (name == "ROLL_PID_OUTPUT_LIMIT")
+    {
+      control->setRollPidOutputLimit(value.toFloat());
+    }
+    else if (name == "SPEED_PID_OUTPUT_LIMIT")
+    {
+      control->setSpeedPidOutputLimit(value.toFloat());
+    }
+    else if (name == "ROLL_PID_OUTPUT_ACC")
+    {
+      control->setMaxRollPidOutputAcceleration(value.toFloat());
+    }
+    else if (name == "SPEED_PID_OUTPUT_ACC")
+    {
+      control->setMaxSpeedPidOutputAcceleration(value.toFloat());
+    }
+
     return "UNKNOWN";
   }
-  static bool toBoolean(String value) {
-    if (value == "true" || value == "1") {
+  static bool toBoolean(String value)
+  {
+    if (value == "true" || value == "1")
+    {
       return true;
-    } else if (value == "false" || value == "0") {
+    }
+    else if (value == "false" || value == "0")
+    {
       return false;
-    } else {
+    }
+    else
+    {
       Serial.println("Invalid boolean value: " + value);
       return false; // Default to false for invalid input
     }

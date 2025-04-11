@@ -1,8 +1,7 @@
 #include "Dampener.hpp"
 
-Dampener::Dampener(uint16_t controlFrequency, double maxAccPerSec)
+Dampener::Dampener(uint16_t controlFrequency, double maxAccPerSec) : controlFrequency(controlFrequency)
 {
-  this->controlPeriodMillis = 1000.0 / controlFrequency;
   this->maxAccPerSec = maxAccPerSec;
   this->maxAccPerPeriod = ((double) maxAccPerSec) / controlFrequency;
 }

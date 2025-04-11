@@ -8,9 +8,9 @@ Control::Control()
       speedPidOutputDampener(CONTROL_FREQUENCY, CONTROL_MAX_SPEED_PID_OUTPUT_ACCELERATION)
 {
   speedPID.SetMode(AUTOMATIC);
-  speedPID.SetOutputLimits(-CONTROL_MAX_SPEED_ROLL_RAD_OFFSET, CONTROL_MAX_SPEED_ROLL_RAD_OFFSET);
+  speedPID.SetOutputLimits(-config.speedPidOutputLimit, config.speedPidOutputLimit);
   rollPID.SetMode(AUTOMATIC);
-  rollPID.SetOutputLimits(-CONTROL_MAX_STEP16_SPEED, CONTROL_MAX_STEP16_SPEED);
+  rollPID.SetOutputLimits(-config.balanceOutputLimit, config.balanceOutputLimit);
   rollPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
   speedPID.SetSampleTime(1000 / CONTROL_FREQUENCY);
 }
@@ -41,7 +41,7 @@ void Control::compute()
   }
   
   speedPID.Compute();
-  this->rollSetpoint = speedPidOutputDampener.dampen(rollSetpoint, CONTROL_TARGET_ROLL - speedPIDOutput);
+  this->rollSetpoint = speedPidOutputDampener.dampen(rollSetpoint, config.balanceRoll - speedPIDOutput);
   rollPID.Compute();
   motorOutput.speedLeft = rollPidOutputDampener.dampen(motorOutput.speedLeft, rollOutput + input.steerOffset);
   motorOutput.speedRight = rollPidOutputDampener.dampen(motorOutput.speedRight, rollOutput - input.steerOffset);

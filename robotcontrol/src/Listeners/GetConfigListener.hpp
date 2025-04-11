@@ -11,8 +11,11 @@ class GetConfigListener : public SerialUnitListener
 private:
   HardwareSerial *serial;
   Motors *motors;
+  Control *control;
+
 public:
-  GetConfigListener(HardwareSerial *serial, Motors *m) : serial(serial), motors(m), SerialUnitListener(SerialUnitAlias::GETCONF) {}
+  GetConfigListener(HardwareSerial *serial, Motors *m, Control *c)
+      : serial(serial), motors(m), control(c), SerialUnitListener(SerialUnitAlias::GETCONF) {}
   void consume(ISerialUnit *unit) override
   {
     if (unit->getAlias() == SerialUnitAlias::GETCONF)
@@ -23,7 +26,8 @@ public:
       this->serial->println(response);
     }
   }
-  String getConfig(String name) {
+  String getConfig(String name)
+  {
     if (name == "TMC_TOFF")
     {
       return String(motors->getTOFF());
@@ -40,7 +44,7 @@ public:
     {
       return String(motors->getIRUN());
     }
-    else if (name == "TMC_IHOLDD")
+    else if (name == "TMC_IHOLDDELAY")
     {
       return String(motors->getIHOLDD());
     }
@@ -56,11 +60,39 @@ public:
     {
       return String(motors->getMaxSpeed());
     }
-    else if (name == "MAX_MOT_ACCELERATION")
+    else if (name == "MAX_MOT_ACC")
     {
       return String(motors->getMaxAcceleration());
     }
-    
+    else if (name == "BALANCE_ROLL")
+    {
+      return String(control->getBalanceRoll(), 10);
+    }
+    else if (name == "MAX_TARGET_SPEED")
+    {
+      return String(control->getMaxTargetSpeed(), 10);
+    }
+    else if (name == "MAX_STEER_OFFSET")
+    {
+      return String(control->getMaxSteerOffset(), 10);
+    }
+    else if (name == "ROLL_PID_OUTPUT_LIMIT")
+    {
+      return String(control->getRollPidOutputLimit(), 10);
+    }
+    else if (name == "SPEED_PID_OUTPUT_LIMIT")
+    {
+      return String(control->getSpeedPidOutputLimit(), 10);
+    }
+    else if (name == "ROLL_PID_OUTPUT_ACC")
+    {
+      return String(control->getMaxRollPidOutputAcceleration(), 10);
+    }
+    else if (name == "SPEED_PID_OUTPUT_ACC")
+    {
+      return String(control->getMaxSpeedPidOutputAcceleration(), 10);
+    }
+
     return "UNKNOWN";
   }
 };
